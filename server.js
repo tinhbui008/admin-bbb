@@ -542,6 +542,34 @@ function shouldTrackUserInRoster(normalized) {
   return false;
 }
 
+function isModeratorRole(role) {
+  return /moderator/i.test(String(role || ""));
+}
+
+function isTeacherIdentity(userLike, teacherId) {
+  if (!userLike) {
+    return false;
+  }
+
+  if (isModeratorRole(userLike.role)) {
+    return true;
+  }
+
+  if (teacherId && userLike.userName && userLike.userName === teacherId) {
+    return true;
+  }
+
+  return false;
+}
+
+function shouldCountAsStudent(userLike, teacherId) {
+  if (!userLike?.userId) {
+    return false;
+  }
+
+  return !isTeacherIdentity(userLike, teacherId);
+}
+
 function applyEventToStore(store, normalized, checksumValid) {
   store.totals.events += 1;
 
@@ -576,6 +604,7 @@ function applyEventToStore(store, normalized, checksumValid) {
     store.users[normalized.userId] = {
       userId: normalized.userId,
       userName: normalized.userName,
+      role: normalized.role,
       joinCount: 0,
       leaveCount: 0,
       lastMeetingId: normalized.meetingId
@@ -584,6 +613,10 @@ function applyEventToStore(store, normalized, checksumValid) {
 
   if (trackRosterUser && normalized.userId && normalized.userName) {
     store.users[normalized.userId].userName = normalized.userName;
+  }
+
+  if (trackRosterUser && normalized.userId && normalized.role) {
+    store.users[normalized.userId].role = normalized.role;
   }
 
   if (normalized.classId && !store.classes[normalized.classId]) {
@@ -751,7 +784,10 @@ function buildStats(store) {
       classEntry.teacherIds.add(meeting.teacherId);
     }
     for (const userId of Object.keys(meeting.users || {})) {
-      classEntry.studentIds.add(userId);
+      const user = store.users[userId];
+      if (shouldCountAsStudent(user, meeting.teacherId)) {
+        classEntry.studentIds.add(userId);
+      }
     }
     classMap.set(classId, classEntry);
 
@@ -771,7 +807,10 @@ function buildStats(store) {
       teacherEntry.classIds.add(meeting.classId);
     }
     for (const userId of Object.keys(meeting.users || {})) {
-      teacherEntry.studentIds.add(userId);
+      const user = store.users[userId];
+      if (shouldCountAsStudent(user, meeting.teacherId)) {
+        teacherEntry.studentIds.add(userId);
+      }
     }
     teacherMap.set(teacherId, teacherEntry);
   }
@@ -792,7 +831,7 @@ function buildStats(store) {
       if (event.teacherId) {
         classEntry.teacherIds.add(event.teacherId);
       }
-      if (event.userId) {
+      if (event.userId && shouldCountAsStudent(event, event.teacherId)) {
         classEntry.studentIds.add(event.userId);
       }
       classMap.set(event.classId, classEntry);
@@ -813,7 +852,7 @@ function buildStats(store) {
       if (event.meetingId) {
         teacherEntry.meetingIds.add(event.meetingId);
       }
-      if (event.userId) {
+      if (event.userId && shouldCountAsStudent(event, event.teacherId)) {
         teacherEntry.studentIds.add(event.userId);
       }
       teacherMap.set(event.teacherId, teacherEntry);
@@ -821,9 +860,14 @@ function buildStats(store) {
   }
 
   for (const user of users) {
+    if (isModeratorRole(user.role)) {
+      continue;
+    }
+
     const studentEntry = {
       userId: user.userId,
       userName: user.userName,
+      role: user.role || null,
       joins: user.joinCount || 0,
       leaves: user.leaveCount || 0,
       lastMeetingId: user.lastMeetingId || null,
@@ -833,17 +877,17 @@ function buildStats(store) {
 
     for (const meeting of meetings) {
       if (meeting.users && Object.prototype.hasOwnProperty.call(meeting.users, user.userId)) {
-        if (meeting.classId) {
+        if (shouldCountAsStudent(user, meeting.teacherId) && meeting.classId) {
           studentEntry.classIds.add(meeting.classId);
         }
-        if (meeting.teacherId) {
+        if (shouldCountAsStudent(user, meeting.teacherId) && meeting.teacherId) {
           studentEntry.teacherIds.add(meeting.teacherId);
         }
       }
     }
 
     for (const event of store.recentEvents.filter(isMeaningfulEvent)) {
-      if (event.userId === user.userId) {
+      if (event.userId === user.userId && shouldCountAsStudent(event, event.teacherId)) {
         if (event.classId) {
           studentEntry.classIds.add(event.classId);
         }
