@@ -76,6 +76,10 @@ async function getTopClasses(limit = 10) {
        (SELECT COALESCE(SUM(m.leave_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as leave_events
      FROM classes c
      WHERE c.class_id != 'unmapped'
+       AND (
+         (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) > 0
+         OR (SELECT COUNT(DISTINCT cs.user_id) FROM class_students cs WHERE cs.class_id = c.class_id) > 0
+       )
      ORDER BY join_events DESC
      LIMIT $1`,
     [limit]

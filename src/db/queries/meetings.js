@@ -238,6 +238,7 @@ async function getTopMeetings(limit = 10) {
     `SELECT m.*,
        (SELECT COUNT(*) FROM meeting_participants mp WHERE mp.meeting_id = m.meeting_id) as participant_count
      FROM meetings m
+     WHERE m.join_events > 0 OR (SELECT COUNT(*) FROM meeting_participants mp WHERE mp.meeting_id = m.meeting_id) > 0
      ORDER BY m.join_events DESC
      LIMIT $1`,
     [limit]

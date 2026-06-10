@@ -5,7 +5,9 @@
       "Bash(docker network:*)",
       "Bash(docker inspect:*)",
       "Bash(docker exec:*)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix\\(stats\\): filter out orphan rooms with no participants\n\n- Skip classes/meetings in stats that have no join events and no students\n- These orphan records occur when archive events arrive after database reset\n- Prevents displaying room IDs as names for incomplete data\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

@@ -93,6 +93,11 @@ async function buildClassDetails() {
     const classDetail = await classesDb.getClassDetails(cls.class_id);
     if (!classDetail) continue;
 
+    // Skip classes with no meaningful data (orphan records from archive events)
+    if (classDetail.totals.joinEvents === 0 && classDetail.totals.students === 0) {
+      continue;
+    }
+
     const relatedEvents = await eventsDb.getEventsByClassId(cls.class_id, 100);
     const participantActivity = await buildParticipantActivity(relatedEvents, classDetail.teachers.map(t => t.teacherId));
 
