@@ -37,6 +37,7 @@ function createEmptyStore() {
     meetings: {},
     users: {},
     classes: {},
+    liveRooms: [],
     recentEvents: [],
     webhookStatus: {
       configured: Boolean(CONFIG.bbbApiBaseUrl && CONFIG.bbbSharedSecret && CONFIG.callbackUrl),
@@ -105,6 +106,7 @@ function readStore() {
   store.meetings = store.meetings || {};
   store.users = store.users || {};
   store.classes = store.classes || {};
+  store.liveRooms = Array.isArray(store.liveRooms) ? store.liveRooms : [];
   store.recentEvents = Array.isArray(store.recentEvents) ? store.recentEvents : [];
   store.webhookStatus = { ...defaults.webhookStatus, ...(store.webhookStatus || {}) };
 
@@ -716,6 +718,7 @@ function buildStats(store) {
       hasCallbackUrl,
       missingEnv
     },
+    liveRooms: store.liveRooms || [],
     topMeetings: meetings
       .map(meeting => ({
         meetingId: meeting.meetingId,
@@ -838,6 +841,34 @@ function parseHooks(xml) {
   return hooks;
 }
 
+function parseMeetings(xml) {
+  const meetings = [];
+  const meetingMatches = xml.match(/<meeting>([\s\S]*?)<\/meeting>/gi) || [];
+
+  for (const meetingXml of meetingMatches) {
+    meetings.push({
+      meetingID: parseXmlTag(meetingXml, "meetingID"),
+      meetingName: parseXmlTag(meetingXml, "meetingName"),
+      attendeeCount: Number(parseXmlTag(meetingXml, "participantCount") || 0),
+      moderatorCount: Number(parseXmlTag(meetingXml, "moderatorCount") || 0),
+      running: parseXmlTag(meetingXml, "running"),
+      createTime: parseXmlTag(meetingXml, "createTime"),
+      metadataClassId:
+        parseXmlTag(meetingXml, "meta_classid") ||
+        parseXmlTag(meetingXml, "meta_classId") ||
+        parseXmlTag(meetingXml, "metadata_classid") ||
+        null,
+      metadataTeacherId:
+        parseXmlTag(meetingXml, "meta_teacherid") ||
+        parseXmlTag(meetingXml, "meta_teacherId") ||
+        parseXmlTag(meetingXml, "metadata_teacherid") ||
+        null
+    });
+  }
+
+  return meetings;
+}
+
 async function callBbbApi(callName, extraParams = {}) {
   if (!CONFIG.bbbApiBaseUrl || !CONFIG.bbbSharedSecret) {
     throw new Error("BBB_API_BASE_URL or BBB_SHARED_SECRET is missing");
@@ -928,6 +959,16 @@ async function listHooks() {
   };
 }
 
+async function listLiveMeetings() {
+  const result = await callBbbApi("getMeetings");
+  return {
+    ok: result.returnCode === "SUCCESS",
+    meetings: parseMeetings(result.xml),
+    messageKey: result.messageKey,
+    message: result.message
+  };
+}
+
 async function destroyHook(hookID) {
   if (!hookID) {
     throw new Error("hookID is required");
@@ -946,20 +987,33 @@ function getConfiguredCallbackUrl(store) {
   return CONFIG.callbackUrl || store?.webhookStatus?.callbackUrl || null;
 }
 
-async function syncRegisteredHookId() {
+async function syncDashboardState() {
   const currentStore = readStore();
   const callbackUrl = getConfiguredCallbackUrl(currentStore);
 
-  if (!CONFIG.bbbApiBaseUrl || !CONFIG.bbbSharedSecret || !callbackUrl) {
+  if (!CONFIG.bbbApiBaseUrl || !CONFIG.bbbSharedSecret) {
     return buildStats(currentStore);
   }
 
   try {
-    const hookList = await listHooks();
-    const matchingHooks = hookList.hooks.filter(hook => hook.callbackURL === callbackUrl);
+    const [hookList, liveMeetingList] = await Promise.all([
+      callbackUrl ? listHooks() : Promise.resolve({ hooks: [] }),
+      listLiveMeetings()
+    ]);
+    const matchingHooks = callbackUrl ? hookList.hooks.filter(hook => hook.callbackURL === callbackUrl) : [];
     const matchedHook = matchingHooks[0] || null;
 
     const nextStore = persistStore(store => {
+      store.liveRooms = liveMeetingList.meetings.map(meeting => ({
+        meetingId: meeting.meetingID || "unknown-meeting",
+        meetingName: meeting.meetingName || meeting.meetingID || "Unnamed room",
+        attendeeCount: meeting.attendeeCount || 0,
+        moderatorCount: meeting.moderatorCount || 0,
+        running: meeting.running || null,
+        createTime: meeting.createTime || null,
+        classId: meeting.metadataClassId || null,
+        teacherId: meeting.metadataTeacherId || null
+      }));
       store.webhookStatus.callbackUrl = callbackUrl;
       store.webhookStatus.expectedCallbackUrl = callbackUrl;
       store.webhookStatus.bbbApiBaseUrl = CONFIG.bbbApiBaseUrl;
@@ -967,7 +1021,7 @@ async function syncRegisteredHookId() {
       store.webhookStatus.eventIds = CONFIG.eventIds || null;
       store.webhookStatus.registeredHookId = matchedHook?.hookID || null;
       store.webhookStatus.matchingHookIds = matchingHooks.map(hook => hook.hookID).filter(Boolean);
-      store.webhookStatus.allHooks = hookList.hooks;
+      store.webhookStatus.allHooks = hookList.hooks || [];
       store.webhookStatus.lastHookSyncAt = new Date().toISOString();
       if (matchedHook) {
         store.webhookStatus.lastError = null;
@@ -1055,7 +1109,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && parsedUrl.pathname === "/api/stats") {
-    sendJson(res, 200, await syncRegisteredHookId());
+    sendJson(res, 200, await syncDashboardState());
     return;
   }
 
@@ -1087,7 +1141,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && parsedUrl.pathname === "/api/hooks/list") {
     try {
       const result = await listHooks();
-      await syncRegisteredHookId();
+      await syncDashboardState();
       sendJson(res, 200, result);
     } catch (error) {
       sendJson(res, 400, { ok: false, error: error.message });
@@ -1100,7 +1154,7 @@ const server = http.createServer(async (req, res) => {
       const rawBody = await getRawBody(req);
       const parsed = rawBody ? JSON.parse(rawBody) : {};
       const result = await destroyHook(parsed.hookID);
-      await syncRegisteredHookId();
+      await syncDashboardState();
       sendJson(res, 200, result);
     } catch (error) {
       sendJson(res, 400, { ok: false, error: error.message });
