@@ -122,9 +122,10 @@ async function handleReset(res) {
     await db.query("UPDATE stats SET value = 0, updated_at = NOW()");
     await db.query("UPDATE webhook_status SET last_webhook_received_at = NULL, last_webhook_preview = NULL, last_error = NULL, updated_at = NOW() WHERE id = 1");
 
-    const stats = await buildStats();
+    // Build stats without syncing live rooms from BBB
+    const stats = await buildStats({ skipLiveSync: true });
     pushRealtimeUpdate("stats", stats);
-    sendJson(res, 200, { ok: true });
+    sendJson(res, 200, { ok: true, message: "Data cleared. Live rooms will reappear on next sync." });
   } catch (error) {
     sendJson(res, 500, { ok: false, error: error.message });
   }

@@ -3,7 +3,9 @@
     "allow": [
       "Bash(docker ps:*)",
       "Bash(docker network:*)",
-      "Bash(docker inspect:*)"
+      "Bash(docker inspect:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker:*)"
     ]
   }
 }

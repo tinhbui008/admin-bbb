@@ -23,7 +23,9 @@ const {
   toTimestampMs
 } = require("../utils/helpers");
 
-async function buildStats() {
+async function buildStats(options = {}) {
+  const { skipLiveSync = false } = options;
+
   const [
     totals,
     summary,
@@ -38,7 +40,7 @@ async function buildStats() {
     statsDb.getTotals(),
     statsDb.getSummary(),
     webhookStatusDb.getWebhookStatus(),
-    liveRoomsDb.getLiveRooms(),
+    skipLiveSync ? [] : liveRoomsDb.getLiveRooms(),
     meetingsDb.getTopMeetings(10),
     statsDb.getTopClasses(10),
     statsDb.getTopTeachers(10),
