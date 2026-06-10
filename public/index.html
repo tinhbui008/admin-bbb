@@ -15,8 +15,6 @@
         --accent-deep: #bf1720;
         --accent-soft: #ffe0e3;
         --accent-wash: rgba(241, 34, 45, 0.08);
-        --lime: #96d66b;
-        --gold: #ffcf5a;
         --border: rgba(241, 34, 45, 0.14);
         --shadow: 0 28px 80px rgba(147, 18, 31, 0.12);
         --radius: 24px;
@@ -199,14 +197,24 @@
         padding: 22px;
       }
 
-      .section + .section {
-        border-top: 1px solid rgba(241, 34, 45, 0.1);
-      }
-
       .summary-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 14px;
+      }
+
+      .summary-card {
+        padding: 18px;
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 242, 243, 0.95));
+        border: 1px solid rgba(241, 34, 45, 0.12);
+      }
+
+      .summary-card strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 30px;
+        letter-spacing: -0.04em;
       }
 
       .room-strip {
@@ -227,20 +235,6 @@
         margin: 8px 0 6px;
         font-size: 20px;
         letter-spacing: -0.03em;
-      }
-
-      .summary-card {
-        padding: 18px;
-        border-radius: 20px;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 242, 243, 0.95));
-        border: 1px solid rgba(241, 34, 45, 0.12);
-      }
-
-      .summary-card strong {
-        display: block;
-        margin-top: 8px;
-        font-size: 30px;
-        letter-spacing: -0.04em;
       }
 
       .tab-bar {
@@ -419,19 +413,6 @@
         margin-bottom: 4px;
       }
 
-      .timeline {
-        display: grid;
-        gap: 10px;
-      }
-
-      .timeline-item {
-        position: relative;
-        padding: 14px 14px 14px 18px;
-        border-left: 3px solid rgba(241, 34, 45, 0.25);
-        background: rgba(255, 245, 246, 0.9);
-        border-radius: 0 16px 16px 0;
-      }
-
       .empty-state {
         padding: 26px;
         border-radius: 22px;
@@ -490,7 +471,7 @@
           <div class="eyebrow">Learning Operations</div>
           <h1 class="headline">Classroom pulse for teachers and learners</h1>
           <p class="subhead">
-            Theo doi hanh vi hoc tap tu BBB webhook theo cach de doc hon: xem tong quan theo tab, sau do di sau vao tung lop de nhin ro giao vien, hoc sinh va activity gan day.
+            Theo doi hanh vi hoc tap tu BBB webhook theo cach de doc hon: xem tong quan theo tab va di sau vao tung lop, giao vien, hoc sinh.
           </p>
         </div>
         <button class="button" id="resetButton">Reset Data</button>
@@ -501,7 +482,7 @@
           <div class="eyebrow" style="color: rgba(255,255,255,0.76);">Realtime Learning View</div>
           <h2 class="hero-title">Mot dashboard tap trung vao dong chay hoc tap, khong chi la log webhook</h2>
           <p>
-            Chuyen tam nhin tu cau hinh ky thuat sang van hanh lop hoc: lop nao so noi, giao vien nao dang phu trach nhieu, hoc sinh nao tham gia deu, va lop nao can theo doi sat hon.
+            Chuyen tam nhin tu cau hinh ky thuat sang van hanh lop hoc: lop nao so noi, giao vien nao dang phu trach nhieu, hoc sinh nao tham gia deu.
           </p>
           <div class="hero-badges">
             <span class="hero-badge">Live class activity</span>
@@ -521,7 +502,7 @@
           <div class="toolbar-copy">
             <div class="eyebrow">Live Rooms</div>
             <h2>Room dang ton tai tren BBB</h2>
-            <p>Danh sach nay lay truc tiep tu `getMeetings`, vi vay room moi tao se hien ra ngay ca khi webhook chua phat sinh activity.</p>
+            <p>Danh sach nay lay truc tiep tu getMeetings, vi vay room moi tao se hien ra ngay ca khi webhook chua phat sinh activity.</p>
           </div>
         </div>
         <div class="room-strip" id="liveRooms"></div>
@@ -533,7 +514,7 @@
             <div class="toolbar-copy">
               <div class="eyebrow">Explore</div>
               <h2 id="tabTitle">Lop hoc</h2>
-              <p id="tabDescription">Chon mot lop hoc de xem chi tiet giao vien, hoc sinh va recent events.</p>
+              <p id="tabDescription">Chon mot lop hoc de xem chi tiet giao vien va hoc sinh.</p>
             </div>
             <div class="tab-bar">
               <button class="tab-button active" data-tab="classes">Lop hoc</button>
@@ -564,7 +545,7 @@
       const TAB_META = {
         classes: {
           title: "Lop hoc",
-          description: "Chon mot lop hoc de xem chi tiet giao vien, hoc sinh va recent events."
+          description: "Chon mot lop hoc de xem chi tiet giao vien va hoc sinh."
         },
         teachers: {
           title: "Giao vien",
@@ -882,17 +863,6 @@
               </div>
             `).join("") || `<div class="list-item muted">Chua co hoc sinh</div>`}
           </div>
-          <div class="list-block">
-            <h3>Recent activity</h3>
-            <div class="timeline">
-              ${(selected.recentEvents || []).map(item => `
-                <div class="timeline-item">
-                  <strong>${item.eventName}</strong>
-                  <div class="muted">${item.userName || item.userId || "Unknown"} • ${item.teacherId || "-"} • ${item.meetingId}</div>
-                </div>
-              `).join("") || `<div class="timeline-item muted">Chua co activity cho lop nay</div>`}
-            </div>
-          </div>
         `;
       }
 
@@ -945,17 +915,6 @@
                 <strong>${classId}</strong>
               </div>
             `).join("") || `<div class="list-item muted">Chua gan lop hoc</div>`}
-          </div>
-          <div class="list-block">
-            <h3>Recent activity</h3>
-            <div class="timeline">
-              ${(selected.recentEvents || []).map(item => `
-                <div class="timeline-item">
-                  <strong>${item.eventName}</strong>
-                  <div class="muted">${item.classId || "-"} • ${item.userName || item.userId || "-"}</div>
-                </div>
-              `).join("") || `<div class="timeline-item muted">Chua co activity</div>`}
-            </div>
           </div>
         `;
       }
@@ -1010,17 +969,6 @@
                 <strong>${classId}</strong>
               </div>
             `).join("") || `<div class="list-item muted">Chua co lop lien quan</div>`}
-          </div>
-          <div class="list-block">
-            <h3>Recent activity</h3>
-            <div class="timeline">
-              ${(selected.recentEvents || []).map(item => `
-                <div class="timeline-item">
-                  <strong>${item.eventName}</strong>
-                  <div class="muted">${item.classId || "-"} • ${item.teacherId || "-"} • ${item.meetingId}</div>
-                </div>
-              `).join("") || `<div class="timeline-item muted">Chua co activity</div>`}
-            </div>
           </div>
         `;
       }

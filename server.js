@@ -113,7 +113,7 @@ function readStore() {
   store.recentEvents = Array.isArray(store.recentEvents) ? store.recentEvents : [];
   store.webhookStatus = { ...defaults.webhookStatus, ...(store.webhookStatus || {}) };
 
-  return store;
+  return compactStore(store);
 }
 
 function writeStore(store) {
@@ -309,6 +309,44 @@ function pickFirstValue(object, paths) {
 }
 
 function normalizeEvent(payload, formFields) {
+  const externalMeetingId =
+    pickFirstValue(payload, [
+      "externalMeetingId",
+      "meeting.externalMeetingId",
+      "meeting.external-meeting-id",
+      "data.attributes.meeting.external-meeting-id",
+      "data.attributes.meeting.externalMeetingId",
+      "core.body.props.meetingProp.extId"
+    ]) || null;
+
+  const internalMeetingId =
+    pickFirstValue(payload, [
+      "meetingId",
+      "meeting.id",
+      "meeting.meetingID",
+      "meeting.meetingId",
+      "meetingID",
+      "data.attributes.meeting.internal-meeting-id",
+      "data.attributes.meeting.internalMeetingId",
+      "data.attributes.meeting.meetingId",
+      "data.attributes.meeting.id",
+      "data.meetingId",
+      "data.meetingID",
+      "data.event.meetingId",
+      "header.meetingId",
+      "core.body.meetingId",
+      "core.body.props.meetingProp.intId"
+    ]) || null;
+
+  const meetingName =
+    pickFirstValue(payload, [
+      "meetingName",
+      "meeting.name",
+      "data.attributes.meeting.name",
+      "data.attributes.meeting.meetingName",
+      "core.body.props.meetingProp.name"
+    ]) || null;
+
   const eventName =
     pickFirstValue(payload, [
       "event",
@@ -325,40 +363,18 @@ function normalizeEvent(payload, formFields) {
       "envelope.name"
     ]) || "unknown";
 
-  const meetingId =
-    pickFirstValue(payload, [
-      "meetingId",
-      "meeting.id",
-      "meeting.meetingID",
-      "meeting.meetingId",
-      "meetingID",
-      "data.attributes.meeting.internal-meeting-id",
-      "data.attributes.meeting.internalMeetingId",
-      "data.attributes.meeting.external-meeting-id",
-      "data.attributes.meeting.externalMeetingId",
-      "data.attributes.meeting.meetingId",
-      "data.attributes.meeting.id",
-      "data.attributes.meeting.name",
-      "data.meetingId",
-      "data.meetingID",
-      "data.event.meetingId",
-      "header.meetingId",
-      "core.body.meetingId",
-      "core.body.props.meetingProp.intId",
-      "core.body.props.meetingProp.extId",
-      "core.body.props.meetingProp.name"
-    ]) || "unknown-meeting";
+  const meetingId = externalMeetingId || internalMeetingId || meetingName || "unknown-meeting";
 
   const userId =
     pickFirstValue(payload, [
       "userId",
       "user.id",
       "user.userId",
+      "data.attributes.user.external-user-id",
+      "data.attributes.user.externalUserId",
       "data.attributes.user.internal-user-id",
       "data.attributes.user.internalUserId",
       "data.attributes.user.userId",
-      "data.attributes.user.external-user-id",
-      "data.attributes.user.externalUserId",
       "data.attributes.user.id",
       "data.attributes.attendee.userId",
       "data.attributes.attendee.externalUserId",
@@ -383,7 +399,16 @@ function normalizeEvent(payload, formFields) {
       "core.body.props.user.name"
     ]) || null;
 
-  const classId =
+  const role =
+    pickFirstValue(payload, [
+      "role",
+      "user.role",
+      "data.attributes.user.role",
+      "data.attributes.attendee.role",
+      "core.body.props.user.role"
+    ]) || null;
+
+  let classId =
     pickFirstValue(payload, [
       "classId",
       "metadata.classId",
@@ -396,9 +421,9 @@ function normalizeEvent(payload, formFields) {
       "data.attributes.meeting.metadata.classId",
       "core.body.props.meetingProp.metadata.classId",
       "core.body.props.meetingProp.metadata.classid"
-    ]) || "unmapped";
+    ]) || null;
 
-  const teacherId =
+  let teacherId =
     pickFirstValue(payload, [
       "teacherId",
       "metadata.teacherId",
@@ -412,6 +437,14 @@ function normalizeEvent(payload, formFields) {
       "core.body.props.meetingProp.metadata.teacherId",
       "core.body.props.meetingProp.metadata.teacherid"
     ]) || null;
+
+  if (!classId) {
+    classId = meetingName || externalMeetingId || internalMeetingId || "unmapped";
+  }
+
+  if (!teacherId && role && /moderator/i.test(String(role))) {
+    teacherId = userName || userId || "moderator";
+  }
 
   const timestamp =
     pickFirstValue(payload, [
@@ -432,6 +465,8 @@ function normalizeEvent(payload, formFields) {
     userName: userName ? String(userName) : null,
     classId: String(classId),
     teacherId: teacherId ? String(teacherId) : null,
+    meetingName: meetingName ? String(meetingName) : null,
+    role: role ? String(role) : null,
     timestamp,
     raw: payload
   };
@@ -457,6 +492,164 @@ function isMeaningfulEvent(normalized) {
   return false;
 }
 
+function dedupeNormalizedEvents(events) {
+  const seen = new Set();
+  const result = [];
+
+  for (const event of events) {
+    const signature = [
+      event.eventName,
+      event.meetingId,
+      event.userId || "",
+      event.userName || "",
+      event.timestamp || "",
+      event.role || ""
+    ].join("|");
+
+    if (seen.has(signature)) {
+      continue;
+    }
+
+    seen.add(signature);
+    result.push(event);
+  }
+
+  return result;
+}
+
+function applyEventToStore(store, normalized, checksumValid) {
+  store.totals.events += 1;
+
+  if (checksumValid) {
+    store.totals.checksumVerified += 1;
+  } else {
+    store.totals.checksumRejected += 1;
+  }
+
+  if (!store.meetings[normalized.meetingId]) {
+    store.meetings[normalized.meetingId] = {
+      meetingId: normalized.meetingId,
+      meetingName: normalized.meetingName,
+      classId: normalized.classId,
+      teacherId: normalized.teacherId,
+      createdEvents: 0,
+      endedEvents: 0,
+      joinEvents: 0,
+      leaveEvents: 0,
+      users: {}
+    };
+  }
+
+  const meeting = store.meetings[normalized.meetingId];
+  meeting.meetingName = normalized.meetingName || meeting.meetingName;
+  meeting.classId = normalized.classId || meeting.classId;
+  meeting.teacherId = normalized.teacherId || meeting.teacherId;
+
+  if (normalized.userId && !store.users[normalized.userId]) {
+    store.users[normalized.userId] = {
+      userId: normalized.userId,
+      userName: normalized.userName,
+      joinCount: 0,
+      leaveCount: 0,
+      lastMeetingId: normalized.meetingId
+    };
+  }
+
+  if (normalized.userId && normalized.userName) {
+    store.users[normalized.userId].userName = normalized.userName;
+  }
+
+  if (normalized.classId && !store.classes[normalized.classId]) {
+    store.classes[normalized.classId] = {
+      classId: normalized.classId,
+      meetings: {}
+    };
+  }
+
+  if (normalized.classId) {
+    store.classes[normalized.classId].meetings[normalized.meetingId] = true;
+  }
+
+  if (isMeetingCreatedEvent(normalized.eventName)) {
+    store.totals.meetingsCreated += 1;
+    meeting.createdEvents += 1;
+  }
+
+  if (isMeetingEndedEvent(normalized.eventName)) {
+    store.totals.meetingsEnded += 1;
+    meeting.endedEvents += 1;
+  }
+
+  if (isJoinEvent(normalized.eventName)) {
+    store.totals.participantsJoined += 1;
+    meeting.joinEvents += 1;
+
+    if (normalized.userId) {
+      store.users[normalized.userId].joinCount += 1;
+      store.users[normalized.userId].lastMeetingId = normalized.meetingId;
+      meeting.users[normalized.userId] = normalized.userName || normalized.userId;
+    }
+  }
+
+  if (isLeaveEvent(normalized.eventName)) {
+    store.totals.participantsLeft += 1;
+    meeting.leaveEvents += 1;
+
+    if (normalized.userId) {
+      store.users[normalized.userId].leaveCount += 1;
+      store.users[normalized.userId].lastMeetingId = normalized.meetingId;
+      meeting.users[normalized.userId] = normalized.userName || store.users[normalized.userId].userName || normalized.userId;
+    }
+  }
+
+  store.recentEvents.unshift({
+    eventName: normalized.eventName,
+    meetingId: normalized.meetingId,
+    userId: normalized.userId,
+    userName: normalized.userName,
+    classId: normalized.classId,
+    teacherId: normalized.teacherId,
+    meetingName: normalized.meetingName,
+    role: normalized.role,
+    timestamp: normalized.timestamp,
+    checksumValid
+  });
+
+  store.recentEvents = store.recentEvents.slice(0, 100);
+  return store;
+}
+
+function compactStore(store) {
+  const defaults = createEmptyStore();
+  const compacted = {
+    ...defaults,
+    liveRooms: Array.isArray(store.liveRooms) ? store.liveRooms : [],
+    webhookStatus: { ...defaults.webhookStatus, ...(store.webhookStatus || {}) }
+  };
+
+  const dedupedEvents = dedupeNormalizedEvents(
+    (Array.isArray(store.recentEvents) ? store.recentEvents : [])
+      .filter(isMeaningfulEvent)
+      .map(event => ({
+        eventName: event.eventName || "unknown",
+        meetingId: event.meetingId || "unknown-meeting",
+        userId: event.userId || null,
+        userName: event.userName || null,
+        classId: event.classId || "unmapped",
+        teacherId: event.teacherId || null,
+        meetingName: event.meetingName || null,
+        role: event.role || null,
+        timestamp: event.timestamp || null
+      }))
+  );
+
+  for (const event of dedupedEvents.slice().reverse()) {
+    applyEventToStore(compacted, event, true);
+  }
+
+  return compacted;
+}
+
 function isJoinEvent(eventName) {
   return /user.*join|participant.*join|joined/i.test(eventName);
 }
@@ -474,103 +667,7 @@ function isMeetingEndedEvent(eventName) {
 }
 
 function updateStoreFromEvent(normalized, checksumValid) {
-  return persistStore(store => {
-    store.totals.events += 1;
-
-    if (checksumValid) {
-      store.totals.checksumVerified += 1;
-    } else {
-      store.totals.checksumRejected += 1;
-    }
-
-    if (!store.meetings[normalized.meetingId]) {
-      store.meetings[normalized.meetingId] = {
-        meetingId: normalized.meetingId,
-        classId: normalized.classId,
-        teacherId: normalized.teacherId,
-        createdEvents: 0,
-        endedEvents: 0,
-        joinEvents: 0,
-        leaveEvents: 0,
-        users: {}
-      };
-    }
-
-    const meeting = store.meetings[normalized.meetingId];
-    meeting.classId = normalized.classId || meeting.classId;
-    meeting.teacherId = normalized.teacherId || meeting.teacherId;
-
-    if (normalized.userId && !store.users[normalized.userId]) {
-      store.users[normalized.userId] = {
-        userId: normalized.userId,
-        userName: normalized.userName,
-        joinCount: 0,
-        leaveCount: 0,
-        lastMeetingId: normalized.meetingId
-      };
-    }
-
-    if (normalized.userId && normalized.userName) {
-      store.users[normalized.userId].userName = normalized.userName;
-    }
-
-    if (normalized.classId && !store.classes[normalized.classId]) {
-      store.classes[normalized.classId] = {
-        classId: normalized.classId,
-        meetings: {}
-      };
-    }
-
-    if (normalized.classId) {
-      store.classes[normalized.classId].meetings[normalized.meetingId] = true;
-    }
-
-    if (isMeetingCreatedEvent(normalized.eventName)) {
-      store.totals.meetingsCreated += 1;
-      meeting.createdEvents += 1;
-    }
-
-    if (isMeetingEndedEvent(normalized.eventName)) {
-      store.totals.meetingsEnded += 1;
-      meeting.endedEvents += 1;
-    }
-
-    if (isJoinEvent(normalized.eventName)) {
-      store.totals.participantsJoined += 1;
-      meeting.joinEvents += 1;
-
-      if (normalized.userId) {
-        store.users[normalized.userId].joinCount += 1;
-        store.users[normalized.userId].lastMeetingId = normalized.meetingId;
-        meeting.users[normalized.userId] = normalized.userName || normalized.userId;
-      }
-    }
-
-    if (isLeaveEvent(normalized.eventName)) {
-      store.totals.participantsLeft += 1;
-      meeting.leaveEvents += 1;
-
-      if (normalized.userId) {
-        store.users[normalized.userId].leaveCount += 1;
-        store.users[normalized.userId].lastMeetingId = normalized.meetingId;
-        meeting.users[normalized.userId] = normalized.userName || store.users[normalized.userId].userName || normalized.userId;
-      }
-    }
-
-    store.recentEvents.unshift({
-      eventName: normalized.eventName,
-      meetingId: normalized.meetingId,
-      userId: normalized.userId,
-      userName: normalized.userName,
-      classId: normalized.classId,
-      teacherId: normalized.teacherId,
-      timestamp: normalized.timestamp,
-      checksumValid
-    });
-
-    store.recentEvents = store.recentEvents.slice(0, 100);
-    return store;
-  });
+  return persistStore(store => applyEventToStore(store, normalized, checksumValid));
 }
 
 function buildStats(store) {
@@ -769,12 +866,25 @@ function buildStats(store) {
     .sort((a, b) => (b.joins - a.joins) || (b.leaves - a.leaves))
     .slice(0, 10);
 
+  const meetingNameMap = new Map();
+  for (const meeting of meetings) {
+    if (meeting.meetingId && meeting.meetingName) {
+      meetingNameMap.set(meeting.meetingId, meeting.meetingName);
+    }
+  }
+  for (const room of store.liveRooms || []) {
+    if (room.meetingId && room.meetingName) {
+      meetingNameMap.set(room.meetingId, room.meetingName.replace(/&apos;/g, "'"));
+    }
+  }
+
   const classDetails = Array.from(classMap.values())
     .map(item => {
       const relatedMeetings = meetings
         .filter(meeting => meeting.classId === item.classId)
         .map(meeting => ({
           meetingId: meeting.meetingId,
+          meetingName: meeting.meetingName || meetingNameMap.get(meeting.meetingId) || null,
           teacherId: meeting.teacherId || null,
           joinEvents: meeting.joinEvents || 0,
           leaveEvents: meeting.leaveEvents || 0,
@@ -867,6 +977,7 @@ function buildStats(store) {
     topMeetings: meetings
       .map(meeting => ({
         meetingId: meeting.meetingId,
+        meetingName: meeting.meetingName || meetingNameMap.get(meeting.meetingId) || null,
         classId: meeting.classId,
         teacherId: meeting.teacherId,
         participants: Object.keys(meeting.users).length,
@@ -1132,6 +1243,26 @@ function getConfiguredCallbackUrl(store) {
   return CONFIG.callbackUrl || store?.webhookStatus?.callbackUrl || null;
 }
 
+function findMeetingContext(store, meetingId) {
+  if (!meetingId) {
+    return { classId: null, teacherId: null };
+  }
+
+  const directMeeting = store.meetings?.[meetingId];
+  if (directMeeting) {
+    return {
+      classId: directMeeting.classId || null,
+      teacherId: directMeeting.teacherId || null
+    };
+  }
+
+  const relatedEvents = (store.recentEvents || []).filter(event => event.meetingId === meetingId);
+  const classId = relatedEvents.find(event => event.classId && event.classId !== "unmapped")?.classId || null;
+  const teacherId = relatedEvents.find(event => event.teacherId)?.teacherId || null;
+
+  return { classId, teacherId };
+}
+
 async function syncDashboardState() {
   const currentStore = readStore();
   const callbackUrl = getConfiguredCallbackUrl(currentStore);
@@ -1149,16 +1280,19 @@ async function syncDashboardState() {
     const matchedHook = matchingHooks[0] || null;
 
     const nextStore = persistStore(store => {
-      store.liveRooms = liveMeetingList.meetings.map(meeting => ({
-        meetingId: meeting.meetingID || "unknown-meeting",
-        meetingName: meeting.meetingName || meeting.meetingID || "Unnamed room",
-        attendeeCount: meeting.attendeeCount || 0,
-        moderatorCount: meeting.moderatorCount || 0,
-        running: meeting.running || null,
-        createTime: meeting.createTime || null,
-        classId: meeting.metadataClassId || null,
-        teacherId: meeting.metadataTeacherId || null
-      }));
+      store.liveRooms = liveMeetingList.meetings.map(meeting => {
+        const context = findMeetingContext(store, meeting.meetingID);
+        return {
+          meetingId: meeting.meetingID || "unknown-meeting",
+          meetingName: meeting.meetingName || meeting.meetingID || "Unnamed room",
+          attendeeCount: meeting.attendeeCount || 0,
+          moderatorCount: meeting.moderatorCount || 0,
+          running: meeting.running || null,
+          createTime: meeting.createTime || null,
+          classId: meeting.metadataClassId || context.classId || null,
+          teacherId: meeting.metadataTeacherId || context.teacherId || null
+        };
+      });
       store.webhookStatus.callbackUrl = callbackUrl;
       store.webhookStatus.expectedCallbackUrl = callbackUrl;
       store.webhookStatus.bbbApiBaseUrl = CONFIG.bbbApiBaseUrl;
@@ -1223,9 +1357,11 @@ async function handleWebhook(req, res) {
     }
 
     const candidates = extractEventCandidates(parsed.parsedBody, parsed.formFields);
-    const normalizedEvents = candidates
-      .map(candidate => normalizeEvent(candidate, parsed.formFields))
-      .filter(isMeaningfulEvent);
+    const normalizedEvents = dedupeNormalizedEvents(
+      candidates
+        .map(candidate => normalizeEvent(candidate, parsed.formFields))
+        .filter(isMeaningfulEvent)
+    );
 
     persistStore(store => {
       store.webhookStatus.lastWebhookReceivedAt = new Date().toISOString();
