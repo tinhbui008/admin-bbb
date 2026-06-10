@@ -585,7 +585,12 @@
       }
 
       function renderHero(data) {
-        document.getElementById("heroStats").innerHTML = [
+        const heroStats = document.getElementById("heroStats");
+        if (!heroStats) {
+          return;
+        }
+
+        heroStats.innerHTML = [
           ["Lop hoc", data.summary.uniqueClasses],
           ["Giao vien", data.summary.uniqueTeachers],
           ["Hoc sinh", data.summary.uniqueUsers],
@@ -601,6 +606,11 @@
       }
 
       function renderSummary(data) {
+        const summaryGrid = document.getElementById("summaryGrid");
+        if (!summaryGrid) {
+          return;
+        }
+
         const items = [
           ["Tổng lớp học", data.summary.uniqueClasses],
           ["Tổng giáo viên", data.summary.uniqueTeachers],
@@ -612,7 +622,7 @@
           ["Meeting ended", data.totals.meetingsEnded]
         ];
 
-        document.getElementById("summaryGrid").innerHTML = items
+        summaryGrid.innerHTML = items
           .map(([label, value], index) => `
             <div class="summary-card" style="${index === 0 ? "background: linear-gradient(180deg, rgba(255,249,249,0.98), rgba(255,232,235,0.95));" : ""}">
               <div class="eyebrow" style="margin-bottom: 0;">${label}</div>
@@ -650,8 +660,14 @@
 
       function renderTabMeta(data) {
         const meta = TAB_META[state.activeTab];
-        document.getElementById("tabTitle").textContent = meta.title;
-        document.getElementById("tabDescription").textContent = meta.description;
+        const tabTitle = document.getElementById("tabTitle");
+        const tabDescription = document.getElementById("tabDescription");
+        if (tabTitle) {
+          tabTitle.textContent = meta.title;
+        }
+        if (tabDescription) {
+          tabDescription.textContent = meta.description;
+        }
 
         const chips = {
           classes: [
@@ -1067,5 +1083,3 @@
     </script>
   </body>
 </html>
-
-
