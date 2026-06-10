@@ -469,9 +469,9 @@
       <div class="header">
         <div>
           <div class="eyebrow">Learning Operations</div>
-          <h1 class="headline">Classroom pulse for teachers and learners</h1>
+          <h1 class="headline">Learning Analytics Dashboard</h1>
           <p class="subhead">
-            Theo doi hanh vi hoc tap tu BBB webhook theo cach de doc hon: xem tong quan theo tab va di sau vao tung lop, giao vien, hoc sinh.
+            Track learning behavior from BBB webhooks in an easy-to-read way: view overview by tab and drill down into each class, teacher, and student.
           </p>
         </div>
         <button class="button" id="resetButton">Reset Data</button>
@@ -500,7 +500,7 @@
       <section class="card section">
         <div class="toolbar" style="margin-bottom: 14px;">
           <div class="toolbar-copy">
-            <div class="eyebrow">Lớp đang hoạt động</div>
+            <div class="eyebrow">Active Classes</div>
           </div>
         </div>
         <div class="room-strip" id="liveRooms"></div>
@@ -804,6 +804,74 @@
         `;
       }
 
+      function formatActivityDateTime(value) {
+        if (!value) {
+          return "-";
+        }
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          return "-";
+        }
+
+        return date.toLocaleString("en-US");
+      }
+
+      function renderParticipantActivityTable(rows) {
+        if (!rows || !rows.length) {
+          return `
+            <div class="list-block">
+              <h3>Room Activity</h3>
+              <div class="list-item muted">Chua co du lieu hoat dong chi tiet theo participant</div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="list-block">
+            <h3>Room Activity</h3>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Moderator</th>
+                    <th>Activity Score</th>
+                    <th>Talk time</th>
+                    <th>Webcam Time</th>
+                    <th>Messages</th>
+                    <th>Reactions</th>
+                    <th>Poll Votes</th>
+                    <th>Raise Hands</th>
+                    <th>Join</th>
+                    <th>Left</th>
+                    <th>Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows.map(item => `
+                    <tr>
+                      <td>${item.name || "-"}</td>
+                      <td>${item.moderator ? "TRUE" : "FALSE"}</td>
+                      <td>${item.activityScore ?? 0}</td>
+                      <td>${item.talkTime || "-"}</td>
+                      <td>${item.webcamTime || "-"}</td>
+                      <td>${item.messages ?? 0}</td>
+                      <td>${item.reactions ?? 0}</td>
+                      <td>${item.pollVotes ?? 0}</td>
+                      <td>${item.raiseHands ?? 0}</td>
+                      <td>${formatActivityDateTime(item.joinAt)}</td>
+                      <td>${formatActivityDateTime(item.leftAt)}</td>
+                      <td>${item.duration || "-"}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
       function bindInteractions() {
         document.querySelectorAll("[data-tab]").forEach(button => {
           button.onclick = () => {
@@ -898,6 +966,7 @@
               </div>
             `).join("") || `<div class="list-item muted">Chua co hoc sinh</div>`}
           </div>
+          ${renderParticipantActivityTable(selected.participantActivity || [])}
         `;
       }
 
@@ -1083,3 +1152,4 @@
     </script>
   </body>
 </html>
+

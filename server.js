@@ -574,6 +574,63 @@ function shouldCountAsStudent(userLike, teacherId) {
   return !isTeacherIdentity(userLike, teacherId);
 }
 
+function toTimestampMs(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return null;
+  }
+
+  return numeric < 1e12 ? numeric * 1000 : numeric;
+}
+
+function isMessageEvent(eventName) {
+  return /chat.*message|message.*sent/i.test(String(eventName || ""));
+}
+
+function isReactionEvent(eventName) {
+  return /reaction/i.test(String(eventName || ""));
+}
+
+function isPollVoteEvent(eventName) {
+  return /poll.*vote|vote.*poll/i.test(String(eventName || ""));
+}
+
+function isRaiseHandEvent(eventName) {
+  return /raise.*hand|hand.*raise/i.test(String(eventName || ""));
+}
+
+function isWebcamStartEvent(eventName) {
+  return /webcam.*start|start.*webcam|shared-webcam-started|camera.*start/i.test(String(eventName || ""));
+}
+
+function isWebcamStopEvent(eventName) {
+  return /webcam.*stop|stop.*webcam|shared-webcam-stopped|camera.*stop/i.test(String(eventName || ""));
+}
+
+function isTalkStartEvent(eventName) {
+  return /talk.*start|start.*talk|voice.*start|started-talking/i.test(String(eventName || ""));
+}
+
+function isTalkStopEvent(eventName) {
+  return /talk.*stop|stop.*talk|voice.*stop|stopped-talking/i.test(String(eventName || ""));
+}
+
+function formatDurationMs(durationMs) {
+  if (!Number.isFinite(durationMs) || durationMs <= 0) {
+    return "-";
+  }
+
+  const totalSeconds = Math.floor(durationMs / 1000);
+  const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+  const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+}
+
 function applyEventToStore(store, normalized, checksumValid) {
   store.totals.events += 1;
 
@@ -973,6 +1030,7 @@ function buildStats(store) {
 
   const classDetails = Array.from(classMap.values())
     .map(item => {
+      const relatedMeetingIds = new Set(item.meetingIds);
       const relatedMeetings = meetings
         .filter(meeting => meeting.classId === item.classId)
         .map(meeting => ({
@@ -989,6 +1047,9 @@ function buildStats(store) {
         .sort((a, b) => b.joinEvents - a.joinEvents);
 
       const teacherIds = Array.from(item.teacherIds);
+      const relatedEvents = store.recentEvents.filter(
+        event => isMeaningfulEvent(event) && relatedMeetingIds.has(event.meetingId)
+      );
       const students = Array.from(item.studentIds)
         .filter(userId => {
           const user = store.users[userId];
@@ -1006,6 +1067,186 @@ function buildStats(store) {
         })
         .sort((a, b) => b.joinCount - a.joinCount);
 
+      const participantMap = new Map();
+      const ensureParticipant = (userId, fallbackName = null, fallbackRole = null) => {
+        if (!userId) {
+          return null;
+        }
+
+        const existing = participantMap.get(userId);
+        if (existing) {
+          if (!existing.name && fallbackName) {
+            existing.name = fallbackName;
+          }
+          if (!existing.role && fallbackRole) {
+            existing.role = fallbackRole;
+          }
+          return existing;
+        }
+
+        const knownUser = store.users[userId] || {};
+        const participant = {
+          userId,
+          name: fallbackName || knownUser.userName || userId,
+          role: fallbackRole || knownUser.role || null,
+          joinAt: null,
+          leftAt: null,
+          durationMs: 0,
+          activeJoinAt: null,
+          talkTimeMs: 0,
+          activeTalkAt: null,
+          webcamTimeMs: 0,
+          activeWebcamAt: null,
+          messages: 0,
+          reactions: 0,
+          pollVotes: 0,
+          raiseHands: 0,
+          talkEvents: 0,
+          webcamEvents: 0
+        };
+        participantMap.set(userId, participant);
+        return participant;
+      };
+
+      for (const meeting of relatedMeetings) {
+        const sourceMeeting = store.meetings[meeting.meetingId];
+        for (const userId of Object.keys(sourceMeeting?.users || {})) {
+          const user = store.users[userId];
+          if (!user) {
+            continue;
+          }
+          ensureParticipant(userId, user.userName || userId, user.role || null);
+        }
+      }
+
+      for (const event of relatedEvents) {
+        if (!event.userId) {
+          continue;
+        }
+
+        const participant = ensureParticipant(event.userId, event.userName, event.role);
+        if (!participant) {
+          continue;
+        }
+
+        const timestampMs = toTimestampMs(event.timestamp);
+
+        if (isJoinEvent(event.eventName) && timestampMs) {
+          participant.joinAt = participant.joinAt ? Math.min(participant.joinAt, timestampMs) : timestampMs;
+          participant.activeJoinAt = timestampMs;
+        }
+
+        if (isLeaveEvent(event.eventName) && timestampMs) {
+          participant.leftAt = participant.leftAt ? Math.max(participant.leftAt, timestampMs) : timestampMs;
+          if (participant.activeJoinAt) {
+            participant.durationMs += Math.max(0, timestampMs - participant.activeJoinAt);
+            participant.activeJoinAt = null;
+          }
+        }
+
+        if (isMessageEvent(event.eventName)) {
+          participant.messages += 1;
+        }
+
+        if (isReactionEvent(event.eventName)) {
+          participant.reactions += 1;
+        }
+
+        if (isPollVoteEvent(event.eventName)) {
+          participant.pollVotes += 1;
+        }
+
+        if (isRaiseHandEvent(event.eventName)) {
+          participant.raiseHands += 1;
+        }
+
+        if (isTalkStartEvent(event.eventName) && timestampMs) {
+          participant.talkEvents += 1;
+          if (!participant.activeTalkAt) {
+            participant.activeTalkAt = timestampMs;
+          }
+        }
+
+        if (isTalkStopEvent(event.eventName) && timestampMs) {
+          participant.talkEvents += 1;
+          if (participant.activeTalkAt) {
+            participant.talkTimeMs += Math.max(0, timestampMs - participant.activeTalkAt);
+            participant.activeTalkAt = null;
+          }
+        }
+
+        if (isWebcamStartEvent(event.eventName) && timestampMs) {
+          participant.webcamEvents += 1;
+          if (!participant.activeWebcamAt) {
+            participant.activeWebcamAt = timestampMs;
+          }
+        }
+
+        if (isWebcamStopEvent(event.eventName) && timestampMs) {
+          participant.webcamEvents += 1;
+          if (participant.activeWebcamAt) {
+            participant.webcamTimeMs += Math.max(0, timestampMs - participant.activeWebcamAt);
+            participant.activeWebcamAt = null;
+          }
+        }
+      }
+
+      const nowMs = Date.now();
+      const participantActivity = Array.from(participantMap.values())
+        .map(participant => {
+          let durationMs = participant.durationMs;
+          if (participant.activeJoinAt) {
+            durationMs += Math.max(0, nowMs - participant.activeJoinAt);
+          }
+
+          let talkTimeMs = participant.talkTimeMs;
+          if (participant.activeTalkAt) {
+            talkTimeMs += Math.max(0, nowMs - participant.activeTalkAt);
+          }
+
+          let webcamTimeMs = participant.webcamTimeMs;
+          if (participant.activeWebcamAt) {
+            webcamTimeMs += Math.max(0, nowMs - participant.activeWebcamAt);
+          }
+
+          const knownUser = store.users[participant.userId] || {};
+          const effectiveRole = participant.role || knownUser.role || null;
+          const effectiveName = participant.name || knownUser.userName || participant.userId;
+          const moderator = isModeratorRole(effectiveRole) || teacherIds.includes(effectiveName);
+
+          return {
+            userId: participant.userId,
+            name: effectiveName,
+            moderator,
+            activityScore:
+              participant.messages +
+              participant.reactions +
+              participant.pollVotes +
+              participant.raiseHands +
+              participant.talkEvents +
+              participant.webcamEvents,
+            talkTime: formatDurationMs(talkTimeMs),
+            webcamTime: formatDurationMs(webcamTimeMs),
+            messages: participant.messages,
+            reactions: participant.reactions,
+            pollVotes: participant.pollVotes,
+            raiseHands: participant.raiseHands,
+            joinAt: participant.joinAt,
+            leftAt: participant.leftAt,
+            duration: formatDurationMs(durationMs)
+          };
+        })
+        .filter(item => item.name && item.userId)
+        .sort((a, b) => {
+          if (Number(b.moderator) !== Number(a.moderator)) {
+            return Number(b.moderator) - Number(a.moderator);
+          }
+          if (b.activityScore !== a.activityScore) {
+            return b.activityScore - a.activityScore;
+          }
+          return String(a.name).localeCompare(String(b.name));
+        });
+
       return {
         classId: item.classId,
         className: classNameMap.get(item.classId) || item.classId,
@@ -1022,6 +1263,7 @@ function buildStats(store) {
           joinEvents: item.joinEvents,
           leaveEvents: item.leaveEvents
         },
+        participantActivity,
         recentEvents: store.recentEvents.filter(event => isMeaningfulEvent(event) && event.classId === item.classId).slice(0, 12)
       };
     })
