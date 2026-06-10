@@ -170,6 +170,17 @@
       <h2>Hook Status</h2>
       <div class="status-grid" id="hookStatus"></div>
       <div class="footer-note" id="statusMessage"></div>
+      <table style="margin-top: 16px;">
+        <thead>
+          <tr>
+            <th>Hook ID</th>
+            <th>Callback</th>
+            <th>Raw</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="hooksTable"></tbody>
+      </table>
     </div>
 
     <div class="grid" id="summaryGrid"></div>
@@ -240,10 +251,12 @@
         const hook = data.hook || {};
         const hookItems = [
           item("Callback URL", hook.callbackUrl || "Chua cau hinh", true),
+          item("Expected URL", hook.expectedCallbackUrl || hook.callbackUrl || "Chua cau hinh", true),
           item("BBB API", hook.bbbApiBaseUrl || "Chua cau hinh", true),
           item("Hook ID", hook.registeredHookId || "Chua dang ky", true),
           item("Raw mode", String(hook.getRaw)),
           item("Event IDs", hook.eventIds || "Tat ca", true),
+          item("Matching hooks", Array.isArray(hook.matchingHookIds) ? hook.matchingHookIds.length : 0),
           item("Last register", hook.lastRegistrationAttemptAt || "-", true)
         ];
 
@@ -274,6 +287,24 @@
           ? " Set BBB_CALLBACK_URL to your public dashboard endpoint, for example https://admin.yourdomain.com/webhook/bbb."
           : "";
         document.getElementById("statusMessage").innerHTML = `${pill}${lastResult}${lastError}${helpText}`;
+        document.getElementById("hooksTable").innerHTML = (hook.allHooks || [])
+          .map(row => `
+            <tr>
+              <td class="mono">${row.hookID || "-"}</td>
+              <td class="mono">${row.callbackURL || "-"}</td>
+              <td>${row.rawData || "-"}</td>
+              <td><button class="button warn" data-hook-id="${row.hookID}">Delete</button></td>
+            </tr>
+          `)
+          .join("") || `
+            <tr>
+              <td colspan="4">No hooks</td>
+            </tr>
+          `;
+
+        document.querySelectorAll("[data-hook-id]").forEach(button => {
+          button.addEventListener("click", () => destroyHook(button.dataset.hookId));
+        });
 
         document.getElementById("meetingsTable").innerHTML = data.topMeetings
           .map(item => `
@@ -306,8 +337,12 @@
         render(data);
       }
 
-      async function postJson(url) {
-        const response = await fetch(url, { method: "POST" });
+      async function postJson(url, payload) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: payload ? { "Content-Type": "application/json" } : undefined,
+          body: payload ? JSON.stringify(payload) : undefined
+        });
         return response.json();
       }
 
@@ -315,11 +350,29 @@
         const response = await fetch("/api/hooks/list");
         const data = await response.json();
         if (data.ok) {
-          const hooks = data.hooks.map(hook => `${hook.hookID} -> ${hook.callbackURL}`).join("\n") || "No hooks";
-          window.alert(hooks);
+          await loadStats();
         } else {
           window.alert(data.error || "Cannot list hooks");
         }
+      }
+
+      async function destroyHook(hookID) {
+        if (!hookID) {
+          return;
+        }
+
+        const confirmed = window.confirm(`Delete hook ${hookID}?`);
+        if (!confirmed) {
+          return;
+        }
+
+        const data = await postJson("/api/hooks/destroy", { hookID });
+        if (!data.ok) {
+          window.alert(data.error || "Cannot delete hook");
+          return;
+        }
+
+        await loadStats();
       }
 
       function connectRealtime() {

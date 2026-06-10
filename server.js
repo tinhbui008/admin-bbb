@@ -41,10 +41,13 @@ function createEmptyStore() {
     webhookStatus: {
       configured: Boolean(CONFIG.bbbApiBaseUrl && CONFIG.bbbSharedSecret && CONFIG.callbackUrl),
       callbackUrl: CONFIG.callbackUrl || null,
+      expectedCallbackUrl: CONFIG.callbackUrl || null,
       bbbApiBaseUrl: CONFIG.bbbApiBaseUrl || null,
       getRaw: CONFIG.getRaw,
       eventIds: CONFIG.eventIds || null,
       registeredHookId: null,
+      matchingHookIds: [],
+      allHooks: [],
       lastHookSyncAt: null,
       lastRegistrationAttemptAt: null,
       lastRegistrationResult: null,
@@ -677,6 +680,20 @@ async function listHooks() {
   };
 }
 
+async function destroyHook(hookID) {
+  if (!hookID) {
+    throw new Error("hookID is required");
+  }
+
+  const result = await callBbbApi("hooks/destroy", { hookID });
+  return {
+    ok: result.returnCode === "SUCCESS",
+    hookID,
+    messageKey: result.messageKey,
+    message: result.message
+  };
+}
+
 function getConfiguredCallbackUrl(store) {
   return CONFIG.callbackUrl || store?.webhookStatus?.callbackUrl || null;
 }
@@ -691,14 +708,18 @@ async function syncRegisteredHookId() {
 
   try {
     const hookList = await listHooks();
-    const matchedHook = hookList.hooks.find(hook => hook.callbackURL === callbackUrl) || null;
+    const matchingHooks = hookList.hooks.filter(hook => hook.callbackURL === callbackUrl);
+    const matchedHook = matchingHooks[0] || null;
 
     const nextStore = persistStore(store => {
       store.webhookStatus.callbackUrl = callbackUrl;
+      store.webhookStatus.expectedCallbackUrl = callbackUrl;
       store.webhookStatus.bbbApiBaseUrl = CONFIG.bbbApiBaseUrl;
       store.webhookStatus.getRaw = CONFIG.getRaw;
       store.webhookStatus.eventIds = CONFIG.eventIds || null;
       store.webhookStatus.registeredHookId = matchedHook?.hookID || null;
+      store.webhookStatus.matchingHookIds = matchingHooks.map(hook => hook.hookID).filter(Boolean);
+      store.webhookStatus.allHooks = hookList.hooks;
       store.webhookStatus.lastHookSyncAt = new Date().toISOString();
       if (matchedHook) {
         store.webhookStatus.lastError = null;
@@ -709,6 +730,7 @@ async function syncRegisteredHookId() {
     return buildStats(nextStore);
   } catch (error) {
     const nextStore = persistStore(store => {
+      store.webhookStatus.expectedCallbackUrl = callbackUrl;
       store.webhookStatus.lastHookSyncAt = new Date().toISOString();
       store.webhookStatus.lastError = error.message;
       return store;
@@ -817,6 +839,19 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && parsedUrl.pathname === "/api/hooks/list") {
     try {
       const result = await listHooks();
+      await syncRegisteredHookId();
+      sendJson(res, 200, result);
+    } catch (error) {
+      sendJson(res, 400, { ok: false, error: error.message });
+    }
+    return;
+  }
+
+  if (req.method === "POST" && parsedUrl.pathname === "/api/hooks/destroy") {
+    try {
+      const rawBody = await getRawBody(req);
+      const parsed = rawBody ? JSON.parse(rawBody) : {};
+      const result = await destroyHook(parsed.hookID);
       await syncRegisteredHookId();
       sendJson(res, 200, result);
     } catch (error) {
