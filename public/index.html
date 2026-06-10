@@ -610,7 +610,7 @@
                 <span class="chip">${room.running || "unknown"}</span>
               </div>
               <div class="muted" style="margin-top: 12px;">
-                Class: ${room.classId || "-"}<br />
+                Class: ${room.meetingName || room.classId || "-"}<br />
                 Teacher: ${room.teacherId || "-"}
               </div>
             </div>
@@ -674,7 +674,7 @@
                 <tr>
                   <td>
                     <button class="table-link" data-class-id="${item.classId}">
-                      ${item.classId || "-"}
+                      ${item.className || item.classId || "-"}
                     </button>
                   </td>
                   <td>${item.teachers}</td>
@@ -821,7 +821,7 @@
           <div class="detail-header">
             <div>
               <div class="eyebrow">Class Detail</div>
-              <div class="detail-title">${selected.classId}</div>
+              <div class="detail-title">${selected.className || selected.classId}</div>
             </div>
             <span class="detail-pill">${selected.totals.joinEvents} joins</span>
           </div>
@@ -908,9 +908,9 @@
           </div>
           <div class="list-block">
             <h3>Lop phu trach</h3>
-            ${selected.classIds.map(classId => `
+            ${selected.classNames.map(className => `
               <div class="list-item">
-                <strong>${classId}</strong>
+                <strong>${className}</strong>
               </div>
             `).join("") || `<div class="list-item muted">Chua gan lop hoc</div>`}
           </div>
@@ -962,9 +962,9 @@
           </div>
           <div class="list-block">
             <h3>Lop lien quan</h3>
-            ${selected.classIds.map(classId => `
+            ${selected.classNames.map(className => `
               <div class="list-item">
-                <strong>${classId}</strong>
+                <strong>${className}</strong>
               </div>
             `).join("") || `<div class="list-item muted">Chua co lop lien quan</div>`}
           </div>

@@ -522,6 +522,26 @@ function dedupeNormalizedEvents(events) {
   return result;
 }
 
+function shouldTrackUserInRoster(normalized) {
+  if (!normalized?.userId) {
+    return false;
+  }
+
+  if (isJoinEvent(normalized.eventName) || isLeaveEvent(normalized.eventName)) {
+    return true;
+  }
+
+  if (/chat.*message|message.*sent/i.test(normalized.eventName)) {
+    return true;
+  }
+
+  if (normalized.userName && normalized.role) {
+    return true;
+  }
+
+  return false;
+}
+
 function applyEventToStore(store, normalized, checksumValid) {
   store.totals.events += 1;
 
@@ -550,7 +570,9 @@ function applyEventToStore(store, normalized, checksumValid) {
   meeting.classId = normalized.classId || meeting.classId;
   meeting.teacherId = normalized.teacherId || meeting.teacherId;
 
-  if (normalized.userId && !store.users[normalized.userId]) {
+  const trackRosterUser = shouldTrackUserInRoster(normalized);
+
+  if (trackRosterUser && normalized.userId && !store.users[normalized.userId]) {
     store.users[normalized.userId] = {
       userId: normalized.userId,
       userName: normalized.userName,
@@ -560,7 +582,7 @@ function applyEventToStore(store, normalized, checksumValid) {
     };
   }
 
-  if (normalized.userId && normalized.userName) {
+  if (trackRosterUser && normalized.userId && normalized.userName) {
     store.users[normalized.userId].userName = normalized.userName;
   }
 
@@ -589,7 +611,7 @@ function applyEventToStore(store, normalized, checksumValid) {
     store.totals.participantsJoined += 1;
     meeting.joinEvents += 1;
 
-    if (normalized.userId) {
+    if (trackRosterUser && normalized.userId) {
       store.users[normalized.userId].joinCount += 1;
       store.users[normalized.userId].lastMeetingId = normalized.meetingId;
       meeting.users[normalized.userId] = normalized.userName || normalized.userId;
@@ -600,7 +622,7 @@ function applyEventToStore(store, normalized, checksumValid) {
     store.totals.participantsLeft += 1;
     meeting.leaveEvents += 1;
 
-    if (normalized.userId) {
+    if (trackRosterUser && normalized.userId) {
       store.users[normalized.userId].leaveCount += 1;
       store.users[normalized.userId].lastMeetingId = normalized.meetingId;
       meeting.users[normalized.userId] = normalized.userName || store.users[normalized.userId].userName || normalized.userId;
@@ -837,6 +859,7 @@ function buildStats(store) {
   const topClasses = Array.from(classMap.values())
     .map(item => ({
       classId: item.classId,
+      className: item.classId,
       meetings: item.meetingIds.size,
       teachers: item.teacherIds.size,
       students: item.studentIds.size,
@@ -883,6 +906,23 @@ function buildStats(store) {
     }
   }
 
+  const classNameMap = new Map();
+  for (const meeting of meetings) {
+    if (meeting.classId && meeting.meetingName) {
+      classNameMap.set(meeting.classId, meeting.meetingName);
+    }
+  }
+  for (const room of store.liveRooms || []) {
+    if (room.classId && room.meetingName) {
+      classNameMap.set(room.classId, room.meetingName.replace(/&apos;/g, "'"));
+    }
+  }
+  for (const event of store.recentEvents.filter(isMeaningfulEvent)) {
+    if (event.classId && event.meetingName) {
+      classNameMap.set(event.classId, event.meetingName);
+    }
+  }
+
   const classDetails = Array.from(classMap.values())
     .map(item => {
       const relatedMeetings = meetings
@@ -913,6 +953,7 @@ function buildStats(store) {
 
       return {
         classId: item.classId,
+        className: classNameMap.get(item.classId) || item.classId,
         meetings: relatedMeetings,
         teachers: teacherIds.map(teacherId => ({
           teacherId,
@@ -935,6 +976,7 @@ function buildStats(store) {
     .map(item => ({
       teacherId: item.teacherId,
       classIds: Array.from(item.classIds),
+      classNames: Array.from(item.classIds).map(classId => classNameMap.get(classId) || classId),
       studentIds: Array.from(item.studentIds),
       totals: {
         classes: item.classIds.size,
@@ -952,6 +994,7 @@ function buildStats(store) {
       userId: item.userId,
       userName: item.userName || item.userId,
       classIds: Array.from(item.classIds),
+      classNames: Array.from(item.classIds).map(classId => classNameMap.get(classId) || classId),
       teacherIds: Array.from(item.teacherIds),
       totals: {
         joins: item.joins,
@@ -961,6 +1004,10 @@ function buildStats(store) {
       recentEvents: store.recentEvents.filter(event => isMeaningfulEvent(event) && event.userId === item.userId).slice(0, 10)
     }))
     .sort((a, b) => (b.totals.joins - a.totals.joins) || (b.totals.leaves - a.totals.leaves));
+
+  for (const item of topClasses) {
+    item.className = classNameMap.get(item.classId) || item.classId;
+  }
 
   return {
     totals: store.totals,
