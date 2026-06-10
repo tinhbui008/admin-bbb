@@ -511,13 +511,13 @@
           <div class="toolbar">
             <div class="toolbar-copy">
               <div class="eyebrow">Explore</div>
-              <h2 id="tabTitle">Lop hoc</h2>
-              <p id="tabDescription">Chon mot lop hoc de xem chi tiet giao vien va hoc sinh.</p>
+              <!-- <h2 id="tabTitle">Lop hoc</h2>
+              <p id="tabDescription">Chon mot lop hoc de xem chi tiet giao vien va hoc sinh.</p> -->
             </div>
             <div class="tab-bar">
-              <button class="tab-button active" data-tab="classes">Lop hoc</button>
-              <button class="tab-button" data-tab="teachers">Giao vien</button>
-              <button class="tab-button" data-tab="students">Hoc sinh</button>
+              <button class="tab-button active" data-tab="classes">Lớp học</button>
+              <button class="tab-button" data-tab="teachers">Giáo viên</button>
+              <button class="tab-button" data-tab="students">Học sinh</button>
             </div>
           </div>
           <div class="chip-row" id="tabChips"></div>
@@ -559,6 +559,31 @@
         return value ?? 0;
       }
 
+      function getMeetingNameById(data, meetingId) {
+        if (!meetingId) {
+          return "-";
+        }
+
+        const liveRoom = (data.liveRooms || []).find(item => item.meetingId === meetingId);
+        if (liveRoom && liveRoom.meetingName) {
+          return liveRoom.meetingName;
+        }
+
+        const topMeeting = (data.topMeetings || []).find(item => item.meetingId === meetingId);
+        if (topMeeting && topMeeting.meetingName) {
+          return topMeeting.meetingName;
+        }
+
+        for (const classDetail of data.classDetails || []) {
+          const classMeeting = (classDetail.meetings || []).find(item => item.meetingId === meetingId);
+          if (classMeeting && classMeeting.meetingName) {
+            return classMeeting.meetingName;
+          }
+        }
+
+        return meetingId;
+      }
+
       function renderHero(data) {
         document.getElementById("heroStats").innerHTML = [
           ["Lop hoc", data.summary.uniqueClasses],
@@ -577,12 +602,12 @@
 
       function renderSummary(data) {
         const items = [
-          ["Tong lop hoc", data.summary.uniqueClasses],
-          ["Tong giao vien", data.summary.uniqueTeachers],
-          ["Tong hoc sinh", data.summary.uniqueUsers],
-          ["Tong meetings", data.summary.uniqueMeetings],
-          ["Luot vao lop", data.totals.participantsJoined],
-          ["Luot roi lop", data.totals.participantsLeft],
+          ["Tổng lớp học", data.summary.uniqueClasses],
+          ["Tổng giáo viên", data.summary.uniqueTeachers],
+          ["Tổng học sinh", data.summary.uniqueUsers],
+          ["Tổng meetings", data.summary.uniqueMeetings],
+          ["Lượt vào lớp", data.totals.participantsJoined],
+          ["Lượt rời lớp", data.totals.participantsLeft],
           ["Meeting created", data.totals.meetingsCreated],
           ["Meeting ended", data.totals.meetingsEnded]
         ];
@@ -610,16 +635,15 @@
                 <span class="chip">${room.running || "unknown"}</span>
               </div>
               <div class="muted" style="margin-top: 12px;">
-                Class: ${room.meetingName || "-"}<br />
-                Teacher: ${room.teacherId || "-"}
+                Lớp: ${room.meetingName || "-"}<br />
+                Giáo viên: ${room.teacherId || "-"}
               </div>
             </div>
           `)
           .join("") || `
             <div class="empty-state">
               <div class="eyebrow">Live Rooms</div>
-              <h3>Chua co room nao dang mo</h3>
-              <p class="muted" style="margin-top: 8px;">Neu anh vua tao room ma chua thay, hay refresh sau khi restart app de instance moi goi getMeetings.</p>
+              <h3>Chưa có lớp nào đang hoạt động</h3>
             </div>
           `;
       }
@@ -661,12 +685,11 @@
           <table>
             <thead>
               <tr>
-                <th>Class</th>
-                <th>Teachers</th>
-                <th>Students</th>
-                <th>Meetings</th>
-                <th>Joins</th>
-                <th>Leaves</th>
+                <th>Lớp</th>
+                <th>Giáo viên</th>
+                <th>Học sinh</th>
+                <th>Tham gia</th>
+                <th>Rời khỏi</th>
               </tr>
             </thead>
             <tbody>
@@ -679,13 +702,12 @@
                   </td>
                   <td>${item.teachers}</td>
                   <td>${item.students}</td>
-                  <td>${item.meetings}</td>
                   <td>${item.joinEvents}</td>
                   <td>${item.leaveEvents}</td>
                 </tr>
               `).join("") || `
                 <tr>
-                  <td colspan="6" class="muted">Chua co du lieu lop hoc</td>
+                  <td colspan="6" class="muted">Chưa có dữ liệu lớp học</td>
                 </tr>
               `}
             </tbody>
@@ -698,12 +720,11 @@
           <table>
             <thead>
               <tr>
-                <th>Teacher</th>
-                <th>Classes</th>
-                <th>Students</th>
-                <th>Meetings</th>
-                <th>Joins</th>
-                <th>Leaves</th>
+                <th>Giáo viên</th>
+                <th>Lớp</th>
+                <th>Học sinh</th>
+                <th>Tham gia</th>
+                <th>Rời khỏi</th>
               </tr>
             </thead>
             <tbody>
@@ -827,19 +848,19 @@
           </div>
           <div class="metric-grid">
             <div class="metric-box">
-              <div class="eyebrow">Teachers</div>
+              <div class="eyebrow">Giáo viên</div>
               <strong>${selected.totals.teachers}</strong>
             </div>
             <div class="metric-box">
-              <div class="eyebrow">Students</div>
+              <div class="eyebrow">Học sinh</div>
               <strong>${selected.totals.students}</strong>
             </div>
             <div class="metric-box">
-              <div class="eyebrow">Meetings</div>
-              <strong>${selected.totals.meetings}</strong>
+              <div class="eyebrow">Lượt vào</div>
+              <strong>${selected.totals.joinEvents}</strong>
             </div>
             <div class="metric-box">
-              <div class="eyebrow">Leaves</div>
+              <div class="eyebrow">Lượt rời</div>
               <strong>${selected.totals.leaveEvents}</strong>
             </div>
           </div>
@@ -853,11 +874,11 @@
             `).join("") || `<div class="list-item muted">Chua co giao vien</div>`}
           </div>
           <div class="list-block">
-            <h3>Hoc sinh noi bat</h3>
+            <h3>Học sinh nổi bật</h3>
             ${(selected.students || []).slice(0, 6).map(item => `
               <div class="list-item">
                 <strong>${item.userName || item.userId}</strong>
-                <div class="muted">${item.joinCount} joins • ${item.leaveCount} leaves • ${item.lastMeetingId || "-"}</div>
+                <div class="muted">${item.joinCount} joins • ${item.leaveCount} leaves • ${selected.className || selected.classId}</div>
               </div>
             `).join("") || `<div class="list-item muted">Chua co hoc sinh</div>`}
           </div>
@@ -1046,3 +1067,5 @@
     </script>
   </body>
 </html>
+
+
