@@ -45,6 +45,7 @@ function createEmptyStore() {
       getRaw: CONFIG.getRaw,
       eventIds: CONFIG.eventIds || null,
       registeredHookId: null,
+      lastHookSyncAt: null,
       lastRegistrationAttemptAt: null,
       lastRegistrationResult: null,
       lastError: null
@@ -676,6 +677,47 @@ async function listHooks() {
   };
 }
 
+function getConfiguredCallbackUrl(store) {
+  return CONFIG.callbackUrl || store?.webhookStatus?.callbackUrl || null;
+}
+
+async function syncRegisteredHookId() {
+  const currentStore = readStore();
+  const callbackUrl = getConfiguredCallbackUrl(currentStore);
+
+  if (!CONFIG.bbbApiBaseUrl || !CONFIG.bbbSharedSecret || !callbackUrl) {
+    return buildStats(currentStore);
+  }
+
+  try {
+    const hookList = await listHooks();
+    const matchedHook = hookList.hooks.find(hook => hook.callbackURL === callbackUrl) || null;
+
+    const nextStore = persistStore(store => {
+      store.webhookStatus.callbackUrl = callbackUrl;
+      store.webhookStatus.bbbApiBaseUrl = CONFIG.bbbApiBaseUrl;
+      store.webhookStatus.getRaw = CONFIG.getRaw;
+      store.webhookStatus.eventIds = CONFIG.eventIds || null;
+      store.webhookStatus.registeredHookId = matchedHook?.hookID || null;
+      store.webhookStatus.lastHookSyncAt = new Date().toISOString();
+      if (matchedHook) {
+        store.webhookStatus.lastError = null;
+      }
+      return store;
+    });
+
+    return buildStats(nextStore);
+  } catch (error) {
+    const nextStore = persistStore(store => {
+      store.webhookStatus.lastHookSyncAt = new Date().toISOString();
+      store.webhookStatus.lastError = error.message;
+      return store;
+    });
+
+    return buildStats(nextStore);
+  }
+}
+
 function handleSse(req, res) {
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
@@ -743,7 +785,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && parsedUrl.pathname === "/api/stats") {
-    sendJson(res, 200, buildStats(readStore()));
+    sendJson(res, 200, await syncRegisteredHookId());
     return;
   }
 
@@ -774,7 +816,9 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && parsedUrl.pathname === "/api/hooks/list") {
     try {
-      sendJson(res, 200, await listHooks());
+      const result = await listHooks();
+      await syncRegisteredHookId();
+      sendJson(res, 200, result);
     } catch (error) {
       sendJson(res, 400, { ok: false, error: error.message });
     }
