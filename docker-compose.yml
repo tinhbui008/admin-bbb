@@ -7,10 +7,14 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:14a3b3aeb9800c969c8723292e9f3a3ddbd37c59032303c3@postgres:5432/bbb_admin
     ports:
       - "3000:3000"
     volumes:
       - bbb_admin_data:/app/data
+    networks:
+      - greenlight-v3_default
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/stats').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
@@ -20,3 +24,7 @@ services:
 
 volumes:
   bbb_admin_data:
+
+networks:
+  greenlight-v3_default:
+    external: true

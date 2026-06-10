@@ -518,6 +518,7 @@
               <button class="tab-button active" data-tab="classes">Classes</button>
               <button class="tab-button" data-tab="teachers">Teachers</button>
               <button class="tab-button" data-tab="students">Students</button>
+              <button class="tab-button" data-tab="history">History</button>
             </div>
           </div>
           <div class="chip-row" id="tabChips"></div>
@@ -552,7 +553,21 @@
         students: {
           title: "Students",
           description: "Track students currently active on the system, attendance counts, and related classes."
+        },
+        history: {
+          title: "History Search",
+          description: "Search and filter historical data for classes, teachers, students, and events."
         }
+      };
+
+      const historyState = {
+        searchType: "classes",
+        searchQuery: "",
+        dateFrom: "",
+        dateTo: "",
+        page: 1,
+        results: null,
+        loading: false
       };
 
       function formatNumber(value) {
@@ -684,6 +699,11 @@
             `${data.summary.uniqueUsers} students`,
             `${data.topStudents.length} top students`,
             `${data.totals.participantsLeft} leaves`
+          ],
+          history: [
+            "Search historical data",
+            "Filter by date range",
+            "Export results"
           ]
         };
 
@@ -1077,6 +1097,339 @@
         `;
       }
 
+      function renderHistorySearchForm() {
+        return `
+          <div style="margin-bottom: 20px;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+              <select id="historySearchType" style="padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel); font-size: 14px;">
+                <option value="classes" ${historyState.searchType === "classes" ? "selected" : ""}>Classes</option>
+                <option value="teachers" ${historyState.searchType === "teachers" ? "selected" : ""}>Teachers</option>
+                <option value="students" ${historyState.searchType === "students" ? "selected" : ""}>Students</option>
+                <option value="meetings" ${historyState.searchType === "meetings" ? "selected" : ""}>Meetings</option>
+                <option value="events" ${historyState.searchType === "events" ? "selected" : ""}>Events</option>
+              </select>
+              <input type="text" id="historySearchQuery" placeholder="Search keyword..."
+                value="${historyState.searchQuery}"
+                style="flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel); font-size: 14px;" />
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+              <label style="color: var(--muted); font-size: 13px;">From:</label>
+              <input type="date" id="historyDateFrom" value="${historyState.dateFrom}"
+                style="padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); font-size: 14px;" />
+              <label style="color: var(--muted); font-size: 13px;">To:</label>
+              <input type="date" id="historyDateTo" value="${historyState.dateTo}"
+                style="padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); font-size: 14px;" />
+              <button id="historySearchBtn" class="button" style="padding: 10px 20px;">Search</button>
+              <button id="historyClearBtn" style="padding: 10px 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel); cursor: pointer; font-weight: 600;">Clear</button>
+            </div>
+          </div>
+          ${historyState.loading ? '<div class="muted" style="padding: 20px;">Loading...</div>' : ""}
+          ${renderHistoryResults()}
+        `;
+      }
+
+      function renderHistoryResults() {
+        if (!historyState.results) {
+          return `
+            <div class="empty-state">
+              <div class="eyebrow">History Search</div>
+              <h3>Enter search criteria above</h3>
+              <p class="muted" style="margin-top: 8px;">Search for historical classes, teachers, students, meetings, or events.</p>
+            </div>
+          `;
+        }
+
+        const { data, pagination } = historyState.results;
+
+        if (!data || data.length === 0) {
+          return `
+            <div class="empty-state">
+              <div class="eyebrow">No Results</div>
+              <h3>No data found</h3>
+              <p class="muted" style="margin-top: 8px;">Try adjusting your search criteria.</p>
+            </div>
+          `;
+        }
+
+        let tableHtml = "";
+        if (historyState.searchType === "classes") {
+          tableHtml = `
+            <table>
+              <thead>
+                <tr><th>Class</th><th>Teachers</th><th>Students</th><th>Meetings</th><th>Joins</th><th>Created</th></tr>
+              </thead>
+              <tbody>
+                ${data.map(item => `
+                  <tr>
+                    <td><strong>${item.className || item.classId}</strong></td>
+                    <td>${item.teacherCount}</td>
+                    <td>${item.studentCount}</td>
+                    <td>${item.meetingCount}</td>
+                    <td>${item.joinEvents}</td>
+                    <td class="muted">${formatActivityDateTime(item.createdAt)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
+        } else if (historyState.searchType === "teachers") {
+          tableHtml = `
+            <table>
+              <thead>
+                <tr><th>Teacher</th><th>Classes</th><th>Students</th><th>Meetings</th><th>Joins</th><th>Created</th></tr>
+              </thead>
+              <tbody>
+                ${data.map(item => `
+                  <tr>
+                    <td><strong>${item.teacherName || item.teacherId}</strong></td>
+                    <td>${item.classCount}</td>
+                    <td>${item.studentCount}</td>
+                    <td>${item.meetingCount}</td>
+                    <td>${item.joinEvents}</td>
+                    <td class="muted">${formatActivityDateTime(item.createdAt)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
+        } else if (historyState.searchType === "students") {
+          tableHtml = `
+            <table>
+              <thead>
+                <tr><th>Student</th><th>ID</th><th>Classes</th><th>Joins</th><th>Leaves</th><th>Created</th></tr>
+              </thead>
+              <tbody>
+                ${data.map(item => `
+                  <tr>
+                    <td><strong>${item.userName || item.userId}</strong></td>
+                    <td class="mono">${item.userId}</td>
+                    <td>${item.classCount}</td>
+                    <td>${item.totalJoins}</td>
+                    <td>${item.totalLeaves}</td>
+                    <td class="muted">${formatActivityDateTime(item.createdAt)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
+        } else if (historyState.searchType === "meetings") {
+          tableHtml = `
+            <table>
+              <thead>
+                <tr><th>Meeting</th><th>Class</th><th>Teacher</th><th>Participants</th><th>Joins</th><th>Started</th></tr>
+              </thead>
+              <tbody>
+                ${data.map(item => `
+                  <tr>
+                    <td><strong>${item.meetingName || item.meetingId}</strong></td>
+                    <td>${item.classId || "-"}</td>
+                    <td>${item.teacherId || "-"}</td>
+                    <td>${item.participantCount}</td>
+                    <td>${item.joinEvents}</td>
+                    <td class="muted">${formatActivityDateTime(item.startedAt)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
+        } else if (historyState.searchType === "events") {
+          tableHtml = `
+            <table>
+              <thead>
+                <tr><th>Event</th><th>Meeting</th><th>User</th><th>Class</th><th>Timestamp</th></tr>
+              </thead>
+              <tbody>
+                ${data.map(item => `
+                  <tr>
+                    <td><span class="chip">${item.eventName}</span></td>
+                    <td class="mono" style="font-size: 11px;">${item.meetingId || "-"}</td>
+                    <td>${item.userName || item.userId || "-"}</td>
+                    <td>${item.classId || "-"}</td>
+                    <td class="muted">${formatActivityDateTime(item.timestamp)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
+        }
+
+        const paginationHtml = pagination ? `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div class="muted">
+              Page ${pagination.page} of ${pagination.totalPages} (${pagination.total} total)
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="history-page-btn" data-page="${pagination.page - 1}" ${pagination.page <= 1 ? "disabled" : ""}
+                style="padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); cursor: pointer; ${pagination.page <= 1 ? 'opacity: 0.5;' : ''}">
+                Previous
+              </button>
+              <button class="history-page-btn" data-page="${pagination.page + 1}" ${pagination.page >= pagination.totalPages ? "disabled" : ""}
+                style="padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); cursor: pointer; ${pagination.page >= pagination.totalPages ? 'opacity: 0.5;' : ''}">
+                Next
+              </button>
+            </div>
+          </div>
+        ` : "";
+
+        return tableHtml + paginationHtml;
+      }
+
+      function renderHistoryDetail() {
+        if (!historyState.results || !historyState.results.data || historyState.results.data.length === 0) {
+          return `
+            <div class="empty-state">
+              <div class="eyebrow">Search Tips</div>
+              <h3>History Search</h3>
+              <p class="muted" style="margin-top: 8px;">
+                Use the search form to find historical data:<br><br>
+                - <strong>Classes:</strong> Search by class name or ID<br>
+                - <strong>Teachers:</strong> Search by teacher name<br>
+                - <strong>Students:</strong> Search by student name or ID<br>
+                - <strong>Meetings:</strong> Filter by class or date range<br>
+                - <strong>Events:</strong> View raw webhook events
+              </p>
+            </div>
+          `;
+        }
+
+        const { pagination } = historyState.results;
+        return `
+          <div class="detail-header">
+            <div>
+              <div class="eyebrow">Search Results</div>
+              <div class="detail-title">${historyState.searchType.charAt(0).toUpperCase() + historyState.searchType.slice(1)}</div>
+            </div>
+            <span class="detail-pill">${pagination?.total || 0} found</span>
+          </div>
+          <div class="metric-grid">
+            <div class="metric-box">
+              <div class="eyebrow">Total Results</div>
+              <strong>${pagination?.total || 0}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Current Page</div>
+              <strong>${pagination?.page || 1}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Per Page</div>
+              <strong>${pagination?.limit || 20}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Total Pages</div>
+              <strong>${pagination?.totalPages || 1}</strong>
+            </div>
+          </div>
+          <div class="list-block">
+            <h3>Search Criteria</h3>
+            <div class="list-item">
+              <strong>Type:</strong> ${historyState.searchType}
+            </div>
+            ${historyState.searchQuery ? `<div class="list-item"><strong>Query:</strong> ${historyState.searchQuery}</div>` : ""}
+            ${historyState.dateFrom ? `<div class="list-item"><strong>From:</strong> ${historyState.dateFrom}</div>` : ""}
+            ${historyState.dateTo ? `<div class="list-item"><strong>To:</strong> ${historyState.dateTo}</div>` : ""}
+          </div>
+        `;
+      }
+
+      async function performHistorySearch() {
+        historyState.loading = true;
+        renderCurrentView();
+
+        try {
+          const params = new URLSearchParams();
+          if (historyState.searchQuery) params.set("search", historyState.searchQuery);
+          if (historyState.dateFrom) params.set("from", historyState.dateFrom);
+          if (historyState.dateTo) params.set("to", historyState.dateTo);
+          params.set("page", historyState.page);
+          params.set("limit", "20");
+
+          const response = await fetch(`/api/history/${historyState.searchType}?${params.toString()}`);
+          const result = await response.json();
+
+          if (result.ok) {
+            historyState.results = result;
+          } else {
+            historyState.results = { data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
+          }
+        } catch (error) {
+          console.error("History search error:", error);
+          historyState.results = { data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
+        }
+
+        historyState.loading = false;
+        renderCurrentView();
+      }
+
+      function bindHistoryInteractions() {
+        const searchTypeEl = document.getElementById("historySearchType");
+        const searchQueryEl = document.getElementById("historySearchQuery");
+        const dateFromEl = document.getElementById("historyDateFrom");
+        const dateToEl = document.getElementById("historyDateTo");
+        const searchBtn = document.getElementById("historySearchBtn");
+        const clearBtn = document.getElementById("historyClearBtn");
+
+        if (searchTypeEl) {
+          searchTypeEl.onchange = () => {
+            historyState.searchType = searchTypeEl.value;
+            historyState.page = 1;
+            historyState.results = null;
+            renderCurrentView();
+          };
+        }
+
+        if (searchQueryEl) {
+          searchQueryEl.oninput = () => {
+            historyState.searchQuery = searchQueryEl.value;
+          };
+          searchQueryEl.onkeypress = (e) => {
+            if (e.key === "Enter") {
+              historyState.page = 1;
+              performHistorySearch();
+            }
+          };
+        }
+
+        if (dateFromEl) {
+          dateFromEl.onchange = () => {
+            historyState.dateFrom = dateFromEl.value;
+          };
+        }
+
+        if (dateToEl) {
+          dateToEl.onchange = () => {
+            historyState.dateTo = dateToEl.value;
+          };
+        }
+
+        if (searchBtn) {
+          searchBtn.onclick = () => {
+            historyState.page = 1;
+            performHistorySearch();
+          };
+        }
+
+        if (clearBtn) {
+          clearBtn.onclick = () => {
+            historyState.searchQuery = "";
+            historyState.dateFrom = "";
+            historyState.dateTo = "";
+            historyState.page = 1;
+            historyState.results = null;
+            renderCurrentView();
+          };
+        }
+
+        document.querySelectorAll(".history-page-btn").forEach(btn => {
+          btn.onclick = () => {
+            const page = parseInt(btn.dataset.page, 10);
+            if (page >= 1) {
+              historyState.page = page;
+              performHistorySearch();
+            }
+          };
+        });
+      }
+
       function renderCurrentView() {
         const data = state.stats;
         if (!data) {
@@ -1097,6 +1450,10 @@
         } else if (state.activeTab === "teachers") {
           tabContent.innerHTML = renderTeachersTable(data);
           detailPanel.innerHTML = renderTeacherDetail(data);
+        } else if (state.activeTab === "history") {
+          tabContent.innerHTML = renderHistorySearchForm();
+          detailPanel.innerHTML = renderHistoryDetail();
+          bindHistoryInteractions();
         } else {
           tabContent.innerHTML = renderStudentsTable(data);
           detailPanel.innerHTML = renderStudentDetail(data);
