@@ -370,6 +370,10 @@ function normalizeEvent(payload, formFields) {
       "userId",
       "user.id",
       "user.userId",
+      "data.attributes.chat-message.sender.external-user-id",
+      "data.attributes.chat-message.sender.externalUserId",
+      "data.attributes.chat-message.sender.internal-user-id",
+      "data.attributes.chat-message.sender.internalUserId",
       "data.attributes.user.external-user-id",
       "data.attributes.user.externalUserId",
       "data.attributes.user.internal-user-id",
@@ -390,6 +394,7 @@ function normalizeEvent(payload, formFields) {
       "userName",
       "user.name",
       "user.fullname",
+      "data.attributes.chat-message.sender.name",
       "data.attributes.user.name",
       "data.attributes.user.fullname",
       "data.attributes.user.fullName",
@@ -439,7 +444,7 @@ function normalizeEvent(payload, formFields) {
     ]) || null;
 
   if (!classId) {
-    classId = meetingName || externalMeetingId || internalMeetingId || "unmapped";
+    classId = externalMeetingId || meetingName || internalMeetingId || "unmapped";
   }
 
   if (!teacherId && role && /moderator/i.test(String(role))) {
