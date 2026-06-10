@@ -567,6 +567,10 @@ function shouldCountAsStudent(userLike, teacherId) {
     return false;
   }
 
+  if (!shouldTrackUserInRoster(userLike) && !userLike.joinCount && !userLike.leaveCount) {
+    return false;
+  }
+
   return !isTeacherIdentity(userLike, teacherId);
 }
 
@@ -977,12 +981,19 @@ function buildStats(store) {
           teacherId: meeting.teacherId || null,
           joinEvents: meeting.joinEvents || 0,
           leaveEvents: meeting.leaveEvents || 0,
-          students: Object.keys(meeting.users || {}).length
+          students: Object.keys(meeting.users || {}).filter(userId => {
+            const user = store.users[userId];
+            return shouldCountAsStudent(user, meeting.teacherId);
+          }).length
         }))
         .sort((a, b) => b.joinEvents - a.joinEvents);
 
       const teacherIds = Array.from(item.teacherIds);
       const students = Array.from(item.studentIds)
+        .filter(userId => {
+          const user = store.users[userId];
+          return shouldCountAsStudent(user, teacherIds[0] || null);
+        })
         .map(userId => {
           const user = store.users[userId] || {};
           return {
