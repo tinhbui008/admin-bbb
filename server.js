@@ -1124,6 +1124,22 @@ function buildStats(store) {
           continue;
         }
 
+        const isRosterParticipantEvent =
+          isJoinEvent(event.eventName) ||
+          isLeaveEvent(event.eventName) ||
+          isMessageEvent(event.eventName) ||
+          isReactionEvent(event.eventName) ||
+          isPollVoteEvent(event.eventName) ||
+          isRaiseHandEvent(event.eventName) ||
+          isTalkStartEvent(event.eventName) ||
+          isTalkStopEvent(event.eventName) ||
+          isWebcamStartEvent(event.eventName) ||
+          isWebcamStopEvent(event.eventName);
+
+        if (!isRosterParticipantEvent) {
+          continue;
+        }
+
         const participant = ensureParticipant(event.userId, event.userName, event.role);
         if (!participant) {
           continue;
