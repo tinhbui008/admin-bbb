@@ -419,6 +419,7 @@ function updateStoreFromEvent(normalized, checksumValid) {
       if (normalized.userId) {
         store.users[normalized.userId].leaveCount += 1;
         store.users[normalized.userId].lastMeetingId = normalized.meetingId;
+        meeting.users[normalized.userId] = normalized.userName || store.users[normalized.userId].userName || normalized.userId;
       }
     }
 
@@ -444,6 +445,7 @@ function buildStats(store) {
   const classes = Object.values(store.classes);
   const classMap = new Map();
   const teacherMap = new Map();
+  const studentMap = new Map();
   const hasApiBaseUrl = Boolean(CONFIG.bbbApiBaseUrl);
   const hasSharedSecret = Boolean(CONFIG.bbbSharedSecret);
   const hasCallbackUrl = Boolean(CONFIG.callbackUrl || store.webhookStatus.callbackUrl);
@@ -468,10 +470,12 @@ function buildStats(store) {
       meetingIds: new Set(),
       teacherIds: new Set(),
       studentIds: new Set(),
-      joinEvents: 0
+      joinEvents: 0,
+      leaveEvents: 0
     };
     classEntry.meetingIds.add(meeting.meetingId);
     classEntry.joinEvents += meeting.joinEvents || 0;
+    classEntry.leaveEvents += meeting.leaveEvents || 0;
     if (meeting.teacherId) {
       classEntry.teacherIds.add(meeting.teacherId);
     }
@@ -486,10 +490,12 @@ function buildStats(store) {
       classIds: new Set(),
       meetingIds: new Set(),
       studentIds: new Set(),
-      joinEvents: 0
+      joinEvents: 0,
+      leaveEvents: 0
     };
     teacherEntry.meetingIds.add(meeting.meetingId);
     teacherEntry.joinEvents += meeting.joinEvents || 0;
+    teacherEntry.leaveEvents += meeting.leaveEvents || 0;
     if (meeting.classId) {
       teacherEntry.classIds.add(meeting.classId);
     }
@@ -498,6 +504,201 @@ function buildStats(store) {
     }
     teacherMap.set(teacherId, teacherEntry);
   }
+
+  for (const event of store.recentEvents) {
+    if (event.classId) {
+      const classEntry = classMap.get(event.classId) || {
+        classId: event.classId,
+        meetingIds: new Set(),
+        teacherIds: new Set(),
+        studentIds: new Set(),
+        joinEvents: 0,
+        leaveEvents: 0
+      };
+      if (event.meetingId) {
+        classEntry.meetingIds.add(event.meetingId);
+      }
+      if (event.teacherId) {
+        classEntry.teacherIds.add(event.teacherId);
+      }
+      if (event.userId) {
+        classEntry.studentIds.add(event.userId);
+      }
+      classMap.set(event.classId, classEntry);
+    }
+
+    if (event.teacherId) {
+      const teacherEntry = teacherMap.get(event.teacherId) || {
+        teacherId: event.teacherId,
+        classIds: new Set(),
+        meetingIds: new Set(),
+        studentIds: new Set(),
+        joinEvents: 0,
+        leaveEvents: 0
+      };
+      if (event.classId) {
+        teacherEntry.classIds.add(event.classId);
+      }
+      if (event.meetingId) {
+        teacherEntry.meetingIds.add(event.meetingId);
+      }
+      if (event.userId) {
+        teacherEntry.studentIds.add(event.userId);
+      }
+      teacherMap.set(event.teacherId, teacherEntry);
+    }
+  }
+
+  for (const user of users) {
+    const studentEntry = {
+      userId: user.userId,
+      userName: user.userName,
+      joins: user.joinCount || 0,
+      leaves: user.leaveCount || 0,
+      lastMeetingId: user.lastMeetingId || null,
+      classIds: new Set(),
+      teacherIds: new Set()
+    };
+
+    for (const meeting of meetings) {
+      if (meeting.users && Object.prototype.hasOwnProperty.call(meeting.users, user.userId)) {
+        if (meeting.classId) {
+          studentEntry.classIds.add(meeting.classId);
+        }
+        if (meeting.teacherId) {
+          studentEntry.teacherIds.add(meeting.teacherId);
+        }
+      }
+    }
+
+    for (const event of store.recentEvents) {
+      if (event.userId === user.userId) {
+        if (event.classId) {
+          studentEntry.classIds.add(event.classId);
+        }
+        if (event.teacherId) {
+          studentEntry.teacherIds.add(event.teacherId);
+        }
+      }
+    }
+
+    studentMap.set(user.userId, studentEntry);
+  }
+
+  const topClasses = Array.from(classMap.values())
+    .map(item => ({
+      classId: item.classId,
+      meetings: item.meetingIds.size,
+      teachers: item.teacherIds.size,
+      students: item.studentIds.size,
+      joinEvents: item.joinEvents,
+      leaveEvents: item.leaveEvents
+    }))
+    .sort((a, b) => b.joinEvents - a.joinEvents)
+    .slice(0, 10);
+
+  const topTeachers = Array.from(teacherMap.values())
+    .map(item => ({
+      teacherId: item.teacherId,
+      classes: item.classIds.size,
+      meetings: item.meetingIds.size,
+      students: item.studentIds.size,
+      joinEvents: item.joinEvents,
+      leaveEvents: item.leaveEvents
+    }))
+    .sort((a, b) => b.joinEvents - a.joinEvents)
+    .slice(0, 10);
+
+  const topStudents = Array.from(studentMap.values())
+    .map(item => ({
+      userId: item.userId,
+      userName: item.userName,
+      joins: item.joins,
+      leaves: item.leaves,
+      lastMeetingId: item.lastMeetingId,
+      classes: item.classIds.size,
+      teachers: item.teacherIds.size
+    }))
+    .sort((a, b) => (b.joins - a.joins) || (b.leaves - a.leaves))
+    .slice(0, 10);
+
+  const classDetails = Array.from(classMap.values())
+    .map(item => {
+      const relatedMeetings = meetings
+        .filter(meeting => meeting.classId === item.classId)
+        .map(meeting => ({
+          meetingId: meeting.meetingId,
+          teacherId: meeting.teacherId || null,
+          joinEvents: meeting.joinEvents || 0,
+          leaveEvents: meeting.leaveEvents || 0,
+          students: Object.keys(meeting.users || {}).length
+        }))
+        .sort((a, b) => b.joinEvents - a.joinEvents);
+
+      const teacherIds = Array.from(item.teacherIds);
+      const students = Array.from(item.studentIds)
+        .map(userId => {
+          const user = store.users[userId] || {};
+          return {
+            userId,
+            userName: user.userName || userId,
+            joinCount: user.joinCount || 0,
+            leaveCount: user.leaveCount || 0,
+            lastMeetingId: user.lastMeetingId || null
+          };
+        })
+        .sort((a, b) => b.joinCount - a.joinCount);
+
+      return {
+        classId: item.classId,
+        meetings: relatedMeetings,
+        teachers: teacherIds.map(teacherId => ({
+          teacherId,
+          meetings: relatedMeetings.filter(meeting => meeting.teacherId === teacherId).length
+        })),
+        students,
+        totals: {
+          meetings: item.meetingIds.size,
+          teachers: teacherIds.length,
+          students: students.length,
+          joinEvents: item.joinEvents,
+          leaveEvents: item.leaveEvents
+        },
+        recentEvents: store.recentEvents.filter(event => event.classId === item.classId).slice(0, 12)
+      };
+    })
+    .sort((a, b) => b.totals.joinEvents - a.totals.joinEvents);
+
+  const teacherDetails = Array.from(teacherMap.values())
+    .map(item => ({
+      teacherId: item.teacherId,
+      classIds: Array.from(item.classIds),
+      studentIds: Array.from(item.studentIds),
+      totals: {
+        classes: item.classIds.size,
+        meetings: item.meetingIds.size,
+        students: item.studentIds.size,
+        joinEvents: item.joinEvents,
+        leaveEvents: item.leaveEvents
+      },
+      recentEvents: store.recentEvents.filter(event => (event.teacherId || "unassigned") === item.teacherId).slice(0, 10)
+    }))
+    .sort((a, b) => b.totals.joinEvents - a.totals.joinEvents);
+
+  const studentDetails = Array.from(studentMap.values())
+    .map(item => ({
+      userId: item.userId,
+      userName: item.userName || item.userId,
+      classIds: Array.from(item.classIds),
+      teacherIds: Array.from(item.teacherIds),
+      totals: {
+        joins: item.joins,
+        leaves: item.leaves
+      },
+      lastMeetingId: item.lastMeetingId,
+      recentEvents: store.recentEvents.filter(event => event.userId === item.userId).slice(0, 10)
+    }))
+    .sort((a, b) => (b.totals.joins - a.totals.joins) || (b.totals.leaves - a.totals.leaves));
 
   return {
     totals: store.totals,
@@ -526,36 +727,12 @@ function buildStats(store) {
       }))
       .sort((a, b) => b.joinEvents - a.joinEvents)
       .slice(0, 10),
-    topClasses: Array.from(classMap.values())
-      .map(item => ({
-        classId: item.classId,
-        meetings: item.meetingIds.size,
-        teachers: item.teacherIds.size,
-        students: item.studentIds.size,
-        joinEvents: item.joinEvents
-      }))
-      .sort((a, b) => b.joinEvents - a.joinEvents)
-      .slice(0, 10),
-    topTeachers: Array.from(teacherMap.values())
-      .map(item => ({
-        teacherId: item.teacherId,
-        classes: item.classIds.size,
-        meetings: item.meetingIds.size,
-        students: item.studentIds.size,
-        joinEvents: item.joinEvents
-      }))
-      .sort((a, b) => b.joinEvents - a.joinEvents)
-      .slice(0, 10),
-    topStudents: users
-      .map(user => ({
-        userId: user.userId,
-        userName: user.userName,
-        joins: user.joinCount || 0,
-        leaves: user.leaveCount || 0,
-        lastMeetingId: user.lastMeetingId || null
-      }))
-      .sort((a, b) => (b.joins - a.joins) || (b.leaves - a.leaves))
-      .slice(0, 10),
+    topClasses,
+    topTeachers,
+    topStudents,
+    classDetails,
+    teacherDetails,
+    studentDetails,
     recentEvents: store.recentEvents
   };
 }

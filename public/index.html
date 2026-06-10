@@ -6,14 +6,20 @@
     <title>BBB Admin Dashboard</title>
     <style>
       :root {
-        --bg: #f5f7fb;
-        --panel: #ffffff;
-        --text: #1f2937;
-        --muted: #6b7280;
-        --accent: #0f766e;
-        --accent-2: #155e75;
-        --warn: #b91c1c;
-        --border: #dbe3ee;
+        --bg: #fff7f8;
+        --panel: rgba(255, 255, 255, 0.94);
+        --panel-strong: #ffffff;
+        --text: #241719;
+        --muted: #7d6167;
+        --accent: #f1222d;
+        --accent-deep: #bf1720;
+        --accent-soft: #ffe0e3;
+        --accent-wash: rgba(241, 34, 45, 0.08);
+        --lime: #96d66b;
+        --gold: #ffcf5a;
+        --border: rgba(241, 34, 45, 0.14);
+        --shadow: 0 28px 80px rgba(147, 18, 31, 0.12);
+        --radius: 24px;
       }
 
       * {
@@ -22,83 +28,255 @@
 
       body {
         margin: 0;
-        padding: 24px;
-        font-family: "Segoe UI", sans-serif;
-        background: linear-gradient(180deg, #eef7f6 0%, var(--bg) 35%);
+        min-height: 100vh;
+        padding: 28px;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
         color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(241, 34, 45, 0.16), transparent 24%),
+          radial-gradient(circle at 85% 10%, rgba(255, 207, 90, 0.18), transparent 22%),
+          linear-gradient(180deg, #fff0f2 0%, #fff8f8 45%, #fffdfd 100%);
       }
 
-      h1, h2 {
-        margin: 0 0 12px;
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .page {
+        display: grid;
+        gap: 22px;
       }
 
       .header {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: flex-end;
         gap: 16px;
-        margin-bottom: 24px;
       }
 
-      .actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
+      .eyebrow {
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .headline {
+        font-size: clamp(34px, 6vw, 56px);
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+      }
+
+      .subhead {
+        margin-top: 10px;
+        max-width: 760px;
+        color: var(--muted);
+        line-height: 1.6;
       }
 
       .button {
         border: 0;
-        background: var(--accent);
-        color: white;
-        padding: 10px 14px;
-        border-radius: 10px;
+        border-radius: 999px;
+        padding: 12px 18px;
         cursor: pointer;
+        color: white;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+        box-shadow: 0 16px 34px rgba(241, 34, 45, 0.25);
       }
 
-      .button.secondary {
-        background: var(--accent-2);
-      }
-
-      .button.warn {
-        background: var(--warn);
-      }
-
-      .grid {
+      .hero {
+        position: relative;
+        overflow: hidden;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 16px;
-        margin-bottom: 24px;
+        grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+        gap: 20px;
+        padding: 26px;
+        border-radius: 30px;
+        color: white;
+        background:
+          radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.18), transparent 20%),
+          linear-gradient(135deg, rgba(241, 34, 45, 0.98), rgba(164, 17, 29, 0.95));
+        box-shadow: var(--shadow);
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        right: -36px;
+        bottom: -52px;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.11);
+      }
+
+      .hero-copy,
+      .hero-side {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-title {
+        font-size: clamp(28px, 4.2vw, 44px);
+        line-height: 1.02;
+        letter-spacing: -0.04em;
+      }
+
+      .hero-copy p {
+        margin-top: 14px;
+        max-width: 680px;
+        color: rgba(255, 255, 255, 0.88);
+        line-height: 1.7;
+      }
+
+      .hero-badges {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        font-size: 13px;
+      }
+
+      .hero-side {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        align-content: start;
+      }
+
+      .stat-orb {
+        padding: 16px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .stat-orb strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 30px;
+        letter-spacing: -0.05em;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.9fr);
+        gap: 20px;
       }
 
       .card {
         background: var(--panel);
         border: 1px solid var(--border);
-        border-radius: 16px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .section {
+        padding: 22px;
+      }
+
+      .section + .section {
+        border-top: 1px solid rgba(241, 34, 45, 0.1);
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .summary-card {
         padding: 18px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 242, 243, 0.95));
+        border: 1px solid rgba(241, 34, 45, 0.12);
       }
 
-      .label {
+      .summary-card strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 30px;
+        letter-spacing: -0.04em;
+      }
+
+      .tab-bar {
+        display: inline-flex;
+        gap: 8px;
+        padding: 6px;
+        border-radius: 999px;
+        background: rgba(241, 34, 45, 0.08);
+      }
+
+      .tab-button {
+        border: 0;
+        background: transparent;
         color: var(--muted);
-        font-size: 13px;
-        margin-bottom: 8px;
-      }
-
-      .value {
-        font-size: 28px;
+        padding: 12px 16px;
+        border-radius: 999px;
+        cursor: pointer;
         font-weight: 700;
       }
 
-      .panels {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
+      .tab-button.active {
+        color: white;
+        background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+        box-shadow: 0 12px 24px rgba(241, 34, 45, 0.22);
       }
 
-      .status-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 12px;
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .toolbar-copy p {
+        margin-top: 6px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .chip-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent-deep);
+        background: var(--accent-soft);
       }
 
       table {
@@ -106,226 +284,734 @@
         border-collapse: collapse;
       }
 
-      th, td {
+      th,
+      td {
+        padding: 13px 10px;
         text-align: left;
-        padding: 10px 8px;
-        border-bottom: 1px solid var(--border);
-        font-size: 14px;
+        border-bottom: 1px solid rgba(241, 34, 45, 0.1);
         vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      tbody tr:hover {
+        background: var(--accent-wash);
+      }
+
+      .table-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 0;
+        background: none;
+        padding: 0;
+        color: var(--accent-deep);
+        cursor: pointer;
+        font-weight: 700;
+        text-align: left;
+      }
+
+      .table-link::after {
+        content: ">";
+        font-size: 12px;
+      }
+
+      .muted {
+        color: var(--muted);
       }
 
       .mono {
         font-family: Consolas, monospace;
         font-size: 12px;
-        word-break: break-all;
+        word-break: break-word;
       }
 
-      .pill {
+      .detail-card {
+        position: sticky;
+        top: 20px;
+      }
+
+      .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .detail-title {
+        font-size: 28px;
+        letter-spacing: -0.04em;
+      }
+
+      .detail-pill {
         display: inline-flex;
         align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
         border-radius: 999px;
-        padding: 4px 10px;
-        background: #d1fae5;
-        color: #065f46;
+        background: linear-gradient(135deg, rgba(241, 34, 45, 0.12), rgba(255, 207, 90, 0.18));
+        color: var(--accent-deep);
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
       }
 
-      .pill.bad {
-        background: #fee2e2;
-        color: #991b1b;
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
       }
 
-      .footer-note {
+      .metric-box {
+        padding: 16px;
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 240, 241, 0.92));
+        border: 1px solid rgba(241, 34, 45, 0.12);
+      }
+
+      .metric-box strong {
+        display: block;
         margin-top: 8px;
-        color: var(--muted);
-        font-size: 13px;
+        font-size: 28px;
+        letter-spacing: -0.05em;
       }
 
-      @media (max-width: 980px) {
-        .panels {
+      .list-block {
+        display: grid;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .list-item {
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(241, 34, 45, 0.05);
+        border: 1px solid rgba(241, 34, 45, 0.08);
+      }
+
+      .list-item strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 10px;
+      }
+
+      .timeline-item {
+        position: relative;
+        padding: 14px 14px 14px 18px;
+        border-left: 3px solid rgba(241, 34, 45, 0.25);
+        background: rgba(255, 245, 246, 0.9);
+        border-radius: 0 16px 16px 0;
+      }
+
+      .empty-state {
+        padding: 26px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 242, 243, 0.92));
+        border: 1px dashed rgba(241, 34, 45, 0.18);
+      }
+
+      @media (max-width: 1140px) {
+        .shell,
+        .hero {
           grid-template-columns: 1fr;
         }
 
-        .header {
+        .detail-card {
+          position: static;
+        }
+      }
+
+      @media (max-width: 820px) {
+        .summary-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .toolbar {
           flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 18px;
+        }
+
+        .hero-side,
+        .metric-grid,
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section,
+        .hero {
+          padding: 18px;
+        }
+
+        .headline {
+          font-size: 34px;
         }
       }
     </style>
   </head>
   <body>
-    <div class="header">
-      <div>
-        <h1>BBB Admin Dashboard</h1>
-        <div class="label">Thong tin lop hoc, giao vien va hoc sinh tu BBB webhook</div>
-      </div>
-      <div class="actions">
-        <button class="button warn" id="resetButton">Reset Data</button>
-      </div>
-    </div>
-
-    <div class="grid" id="summaryGrid"></div>
-
-    <div class="panels">
-      <div class="card">
-        <h2>Lop Hoc</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Class</th>
-              <th>Teachers</th>
-              <th>Students</th>
-              <th>Meetings</th>
-              <th>Joins</th>
-            </tr>
-          </thead>
-          <tbody id="classesTable"></tbody>
-        </table>
+    <div class="page">
+      <div class="header">
+        <div>
+          <div class="eyebrow">Learning Operations</div>
+          <h1 class="headline">Classroom pulse for teachers and learners</h1>
+          <p class="subhead">
+            Theo doi hanh vi hoc tap tu BBB webhook theo cach de doc hon: xem tong quan theo tab, sau do di sau vao tung lop de nhin ro giao vien, hoc sinh va activity gan day.
+          </p>
+        </div>
+        <button class="button" id="resetButton">Reset Data</button>
       </div>
 
-      <div class="card">
-        <h2>Giao Vien</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Teacher</th>
-              <th>Classes</th>
-              <th>Students</th>
-              <th>Meetings</th>
-              <th>Joins</th>
-            </tr>
-          </thead>
-          <tbody id="teachersTable"></tbody>
-        </table>
-      </div>
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow" style="color: rgba(255,255,255,0.76);">Realtime Learning View</div>
+          <h2 class="hero-title">Mot dashboard tap trung vao dong chay hoc tap, khong chi la log webhook</h2>
+          <p>
+            Chuyen tam nhin tu cau hinh ky thuat sang van hanh lop hoc: lop nao so noi, giao vien nao dang phu trach nhieu, hoc sinh nao tham gia deu, va lop nao can theo doi sat hon.
+          </p>
+          <div class="hero-badges">
+            <span class="hero-badge">Live class activity</span>
+            <span class="hero-badge">Teacher visibility</span>
+            <span class="hero-badge">Student participation</span>
+          </div>
+        </div>
+        <div class="hero-side" id="heroStats"></div>
+      </section>
 
-      <div class="card">
-        <h2>Hoc Sinh</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>ID</th>
-              <th>Joins</th>
-              <th>Leaves</th>
-              <th>Last Meeting</th>
-            </tr>
-          </thead>
-          <tbody id="studentsTable"></tbody>
-        </table>
-      </div>
+      <section class="card section">
+        <div class="summary-grid" id="summaryGrid"></div>
+      </section>
 
-      <div class="card">
-        <h2>Recent Events</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Event</th>
-              <th>Class</th>
-              <th>Teacher</th>
-              <th>Student</th>
-            </tr>
-          </thead>
-          <tbody id="eventsTable"></tbody>
-        </table>
+      <div class="shell">
+        <section class="card section">
+          <div class="toolbar">
+            <div class="toolbar-copy">
+              <div class="eyebrow">Explore</div>
+              <h2 id="tabTitle">Lop hoc</h2>
+              <p id="tabDescription">Chon mot lop hoc de xem chi tiet giao vien, hoc sinh va recent events.</p>
+            </div>
+            <div class="tab-bar">
+              <button class="tab-button active" data-tab="classes">Lop hoc</button>
+              <button class="tab-button" data-tab="teachers">Giao vien</button>
+              <button class="tab-button" data-tab="students">Hoc sinh</button>
+            </div>
+          </div>
+          <div class="chip-row" id="tabChips"></div>
+          <div id="tabContent" style="margin-top: 16px;"></div>
+        </section>
+
+        <aside class="card section detail-card">
+          <div id="detailPanel"></div>
+        </aside>
       </div>
     </div>
 
     <script>
       let eventSource;
+      const state = {
+        stats: null,
+        activeTab: "classes",
+        selectedClassId: null,
+        selectedTeacherId: null,
+        selectedStudentId: null
+      };
 
-      function item(label, value, mono = false) {
-        return `
-          <div class="card">
-            <div class="label">${label}</div>
-            <div class="${mono ? "mono" : "value"}">${value ?? "-"}</div>
-          </div>
-        `;
+      const TAB_META = {
+        classes: {
+          title: "Lop hoc",
+          description: "Chon mot lop hoc de xem chi tiet giao vien, hoc sinh va recent events."
+        },
+        teachers: {
+          title: "Giao vien",
+          description: "Quan sat giao vien theo so lop, so hoc sinh va muc do tham gia cua cac lop."
+        },
+        students: {
+          title: "Hoc sinh",
+          description: "Theo doi hoc sinh dang xuat hien tren he thong, so lan tham gia va lop hoc lien quan."
+        }
+      };
+
+      function formatNumber(value) {
+        return value ?? 0;
       }
 
-      function render(data) {
-        const summaryItems = [
+      function renderHero(data) {
+        document.getElementById("heroStats").innerHTML = [
+          ["Lop hoc", data.summary.uniqueClasses],
+          ["Giao vien", data.summary.uniqueTeachers],
+          ["Hoc sinh", data.summary.uniqueUsers],
+          ["Luot vao lop", data.totals.participantsJoined]
+        ]
+          .map(([label, value]) => `
+            <div class="stat-orb">
+              <div class="eyebrow" style="color: rgba(255,255,255,0.72); margin-bottom: 0;">${label}</div>
+              <strong>${formatNumber(value)}</strong>
+            </div>
+          `)
+          .join("");
+      }
+
+      function renderSummary(data) {
+        const items = [
           ["Tong lop hoc", data.summary.uniqueClasses],
           ["Tong giao vien", data.summary.uniqueTeachers],
           ["Tong hoc sinh", data.summary.uniqueUsers],
           ["Tong meetings", data.summary.uniqueMeetings],
           ["Luot vao lop", data.totals.participantsJoined],
-          ["Luot roi lop", data.totals.participantsLeft]
+          ["Luot roi lop", data.totals.participantsLeft],
+          ["Meeting created", data.totals.meetingsCreated],
+          ["Meeting ended", data.totals.meetingsEnded]
         ];
 
-        document.getElementById("summaryGrid").innerHTML = summaryItems
-          .map(([label, value]) => item(label, value))
+        document.getElementById("summaryGrid").innerHTML = items
+          .map(([label, value], index) => `
+            <div class="summary-card" style="${index === 0 ? "background: linear-gradient(180deg, rgba(255,249,249,0.98), rgba(255,232,235,0.95));" : ""}">
+              <div class="eyebrow" style="margin-bottom: 0;">${label}</div>
+              <strong>${formatNumber(value)}</strong>
+            </div>
+          `)
+          .join("");
+      }
+
+      function renderTabMeta(data) {
+        const meta = TAB_META[state.activeTab];
+        document.getElementById("tabTitle").textContent = meta.title;
+        document.getElementById("tabDescription").textContent = meta.description;
+
+        const chips = {
+          classes: [
+            `Top ${data.topClasses.length} lop`,
+            `${data.summary.uniqueClasses} lop duy nhat`,
+            `${data.totals.participantsJoined} luot join`
+          ],
+          teachers: [
+            `${data.summary.uniqueTeachers} giao vien`,
+            `${data.topTeachers.length} giao vien hien thi`,
+            `${data.summary.uniqueMeetings} meetings`
+          ],
+          students: [
+            `${data.summary.uniqueUsers} hoc sinh`,
+            `${data.topStudents.length} hoc sinh noi bat`,
+            `${data.totals.participantsLeft} luot leave`
+          ]
+        };
+
+        document.getElementById("tabChips").innerHTML = chips[state.activeTab]
+          .map(label => `<span class="chip">${label}</span>`)
           .join("");
 
-        document.getElementById("classesTable").innerHTML = data.topClasses
-          .map(item => `
-            <tr>
-              <td>${item.classId || "-"}</td>
-              <td>${item.teachers}</td>
-              <td>${item.students}</td>
-              <td>${item.meetings}</td>
-              <td>${item.joinEvents}</td>
-            </tr>
-          `)
-          .join("") || `
-            <tr>
-              <td colspan="5">Chua co du lieu lop hoc</td>
-            </tr>
-          `;
+        document.querySelectorAll("[data-tab]").forEach(button => {
+          button.classList.toggle("active", button.dataset.tab === state.activeTab);
+        });
+      }
 
-        document.getElementById("teachersTable").innerHTML = data.topTeachers
-          .map(item => `
-            <tr>
-              <td>${item.teacherId || "-"}</td>
-              <td>${item.classes}</td>
-              <td>${item.students}</td>
-              <td>${item.meetings}</td>
-              <td>${item.joinEvents}</td>
-            </tr>
-          `)
-          .join("") || `
-            <tr>
-              <td colspan="5">Chua co du lieu giao vien</td>
-            </tr>
-          `;
+      function renderClassesTable(data) {
+        return `
+          <table>
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Teachers</th>
+                <th>Students</th>
+                <th>Meetings</th>
+                <th>Joins</th>
+                <th>Leaves</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.topClasses.map(item => `
+                <tr>
+                  <td>
+                    <button class="table-link" data-class-id="${item.classId}">
+                      ${item.classId || "-"}
+                    </button>
+                  </td>
+                  <td>${item.teachers}</td>
+                  <td>${item.students}</td>
+                  <td>${item.meetings}</td>
+                  <td>${item.joinEvents}</td>
+                  <td>${item.leaveEvents}</td>
+                </tr>
+              `).join("") || `
+                <tr>
+                  <td colspan="6" class="muted">Chua co du lieu lop hoc</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        `;
+      }
 
-        document.getElementById("studentsTable").innerHTML = data.topStudents
-          .map(item => `
-            <tr>
-              <td>${item.userName || "-"}</td>
-              <td class="mono">${item.userId || "-"}</td>
-              <td>${item.joins}</td>
-              <td>${item.leaves}</td>
-              <td class="mono">${item.lastMeetingId || "-"}</td>
-            </tr>
-          `)
-          .join("") || `
-            <tr>
-              <td colspan="5">Chua co du lieu hoc sinh</td>
-            </tr>
-          `;
+      function renderTeachersTable(data) {
+        return `
+          <table>
+            <thead>
+              <tr>
+                <th>Teacher</th>
+                <th>Classes</th>
+                <th>Students</th>
+                <th>Meetings</th>
+                <th>Joins</th>
+                <th>Leaves</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.topTeachers.map(item => `
+                <tr>
+                  <td>
+                    <button class="table-link" data-teacher-id="${item.teacherId}">
+                      ${item.teacherId || "-"}
+                    </button>
+                  </td>
+                  <td>${item.classes}</td>
+                  <td>${item.students}</td>
+                  <td>${item.meetings}</td>
+                  <td>${item.joinEvents}</td>
+                  <td>${item.leaveEvents}</td>
+                </tr>
+              `).join("") || `
+                <tr>
+                  <td colspan="6" class="muted">Chua co du lieu giao vien</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        `;
+      }
 
-        document.getElementById("eventsTable").innerHTML = data.recentEvents
-          .slice(0, 12)
-          .map(item => `
-            <tr>
-              <td>${item.eventName}</td>
-              <td>${item.classId || "-"}</td>
-              <td>${item.teacherId || "-"}</td>
-              <td>${item.userName || item.userId || "-"}</td>
-            </tr>
-          `)
-          .join("") || `
-            <tr>
-              <td colspan="4">Chua co event gan day</td>
-            </tr>
+      function renderStudentsTable(data) {
+        return `
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>ID</th>
+                <th>Classes</th>
+                <th>Teachers</th>
+                <th>Joins</th>
+                <th>Leaves</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.topStudents.map(item => `
+                <tr>
+                  <td>
+                    <button class="table-link" data-student-id="${item.userId}">
+                      ${item.userName || item.userId || "-"}
+                    </button>
+                  </td>
+                  <td class="mono">${item.userId || "-"}</td>
+                  <td>${item.classes}</td>
+                  <td>${item.teachers}</td>
+                  <td>${item.joins}</td>
+                  <td>${item.leaves}</td>
+                </tr>
+              `).join("") || `
+                <tr>
+                  <td colspan="6" class="muted">Chua co du lieu hoc sinh</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        `;
+      }
+
+      function bindInteractions() {
+        document.querySelectorAll("[data-tab]").forEach(button => {
+          button.onclick = () => {
+            state.activeTab = button.dataset.tab;
+            renderCurrentView();
+          };
+        });
+
+        document.querySelectorAll("[data-class-id]").forEach(button => {
+          button.onclick = () => {
+            state.activeTab = "classes";
+            state.selectedClassId = button.dataset.classId;
+            renderCurrentView();
+          };
+        });
+
+        document.querySelectorAll("[data-teacher-id]").forEach(button => {
+          button.onclick = () => {
+            state.activeTab = "teachers";
+            state.selectedTeacherId = button.dataset.teacherId;
+            renderCurrentView();
+          };
+        });
+
+        document.querySelectorAll("[data-student-id]").forEach(button => {
+          button.onclick = () => {
+            state.activeTab = "students";
+            state.selectedStudentId = button.dataset.studentId;
+            renderCurrentView();
+          };
+        });
+      }
+
+      function renderClassDetail(data) {
+        const selected =
+          data.classDetails.find(item => item.classId === state.selectedClassId) ||
+          data.classDetails[0];
+
+        if (!selected) {
+          return `
+            <div class="empty-state">
+              <div class="eyebrow">Class Detail</div>
+              <h3>Chua co lop hoc nao</h3>
+              <p class="muted" style="margin-top: 8px;">Khi webhook bat dau ghi nhan du lieu, thong tin lop hoc se hien o day.</p>
+            </div>
           `;
+        }
+
+        state.selectedClassId = selected.classId;
+
+        return `
+          <div class="detail-header">
+            <div>
+              <div class="eyebrow">Class Detail</div>
+              <div class="detail-title">${selected.classId}</div>
+            </div>
+            <span class="detail-pill">${selected.totals.joinEvents} joins</span>
+          </div>
+          <div class="metric-grid">
+            <div class="metric-box">
+              <div class="eyebrow">Teachers</div>
+              <strong>${selected.totals.teachers}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Students</div>
+              <strong>${selected.totals.students}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Meetings</div>
+              <strong>${selected.totals.meetings}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Leaves</div>
+              <strong>${selected.totals.leaveEvents}</strong>
+            </div>
+          </div>
+          <div class="list-block">
+            <h3>Giao vien</h3>
+            ${(selected.teachers || []).map(item => `
+              <div class="list-item">
+                <strong>${item.teacherId || "-"}</strong>
+                <div class="muted">${item.meetings} meetings trong lop nay</div>
+              </div>
+            `).join("") || `<div class="list-item muted">Chua co giao vien</div>`}
+          </div>
+          <div class="list-block">
+            <h3>Hoc sinh noi bat</h3>
+            ${(selected.students || []).slice(0, 6).map(item => `
+              <div class="list-item">
+                <strong>${item.userName || item.userId}</strong>
+                <div class="muted">${item.joinCount} joins • ${item.leaveCount} leaves • ${item.lastMeetingId || "-"}</div>
+              </div>
+            `).join("") || `<div class="list-item muted">Chua co hoc sinh</div>`}
+          </div>
+          <div class="list-block">
+            <h3>Recent activity</h3>
+            <div class="timeline">
+              ${(selected.recentEvents || []).map(item => `
+                <div class="timeline-item">
+                  <strong>${item.eventName}</strong>
+                  <div class="muted">${item.userName || item.userId || "Unknown"} • ${item.teacherId || "-"} • ${item.meetingId}</div>
+                </div>
+              `).join("") || `<div class="timeline-item muted">Chua co activity cho lop nay</div>`}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderTeacherDetail(data) {
+        const selected =
+          data.teacherDetails.find(item => item.teacherId === state.selectedTeacherId) ||
+          data.teacherDetails[0];
+
+        if (!selected) {
+          return `
+            <div class="empty-state">
+              <div class="eyebrow">Teacher Detail</div>
+              <h3>Chua co giao vien nao</h3>
+            </div>
+          `;
+        }
+
+        state.selectedTeacherId = selected.teacherId;
+
+        return `
+          <div class="detail-header">
+            <div>
+              <div class="eyebrow">Teacher Detail</div>
+              <div class="detail-title">${selected.teacherId}</div>
+            </div>
+            <span class="detail-pill">${selected.totals.classes} classes</span>
+          </div>
+          <div class="metric-grid">
+            <div class="metric-box">
+              <div class="eyebrow">Students</div>
+              <strong>${selected.totals.students}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Meetings</div>
+              <strong>${selected.totals.meetings}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Joins</div>
+              <strong>${selected.totals.joinEvents}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Leaves</div>
+              <strong>${selected.totals.leaveEvents}</strong>
+            </div>
+          </div>
+          <div class="list-block">
+            <h3>Lop phu trach</h3>
+            ${selected.classIds.map(classId => `
+              <div class="list-item">
+                <strong>${classId}</strong>
+              </div>
+            `).join("") || `<div class="list-item muted">Chua gan lop hoc</div>`}
+          </div>
+          <div class="list-block">
+            <h3>Recent activity</h3>
+            <div class="timeline">
+              ${(selected.recentEvents || []).map(item => `
+                <div class="timeline-item">
+                  <strong>${item.eventName}</strong>
+                  <div class="muted">${item.classId || "-"} • ${item.userName || item.userId || "-"}</div>
+                </div>
+              `).join("") || `<div class="timeline-item muted">Chua co activity</div>`}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderStudentDetail(data) {
+        const selected =
+          data.studentDetails.find(item => item.userId === state.selectedStudentId) ||
+          data.studentDetails[0];
+
+        if (!selected) {
+          return `
+            <div class="empty-state">
+              <div class="eyebrow">Student Detail</div>
+              <h3>Chua co hoc sinh nao</h3>
+            </div>
+          `;
+        }
+
+        state.selectedStudentId = selected.userId;
+
+        return `
+          <div class="detail-header">
+            <div>
+              <div class="eyebrow">Student Detail</div>
+              <div class="detail-title">${selected.userName || selected.userId}</div>
+              <div class="muted mono" style="margin-top: 6px;">${selected.userId}</div>
+            </div>
+            <span class="detail-pill">${selected.totals.joins} joins</span>
+          </div>
+          <div class="metric-grid">
+            <div class="metric-box">
+              <div class="eyebrow">Classes</div>
+              <strong>${selected.classIds.length}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Teachers</div>
+              <strong>${selected.teacherIds.length}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Joins</div>
+              <strong>${selected.totals.joins}</strong>
+            </div>
+            <div class="metric-box">
+              <div class="eyebrow">Leaves</div>
+              <strong>${selected.totals.leaves}</strong>
+            </div>
+          </div>
+          <div class="list-block">
+            <h3>Lop lien quan</h3>
+            ${selected.classIds.map(classId => `
+              <div class="list-item">
+                <strong>${classId}</strong>
+              </div>
+            `).join("") || `<div class="list-item muted">Chua co lop lien quan</div>`}
+          </div>
+          <div class="list-block">
+            <h3>Recent activity</h3>
+            <div class="timeline">
+              ${(selected.recentEvents || []).map(item => `
+                <div class="timeline-item">
+                  <strong>${item.eventName}</strong>
+                  <div class="muted">${item.classId || "-"} • ${item.teacherId || "-"} • ${item.meetingId}</div>
+                </div>
+              `).join("") || `<div class="timeline-item muted">Chua co activity</div>`}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderCurrentView() {
+        const data = state.stats;
+        if (!data) {
+          return;
+        }
+
+        renderHero(data);
+        renderSummary(data);
+        renderTabMeta(data);
+
+        const tabContent = document.getElementById("tabContent");
+        const detailPanel = document.getElementById("detailPanel");
+
+        if (state.activeTab === "classes") {
+          tabContent.innerHTML = renderClassesTable(data);
+          detailPanel.innerHTML = renderClassDetail(data);
+        } else if (state.activeTab === "teachers") {
+          tabContent.innerHTML = renderTeachersTable(data);
+          detailPanel.innerHTML = renderTeacherDetail(data);
+        } else {
+          tabContent.innerHTML = renderStudentsTable(data);
+          detailPanel.innerHTML = renderStudentDetail(data);
+        }
+
+        bindInteractions();
+      }
+
+      function hydrateSelection(data) {
+        if (!state.selectedClassId && data.classDetails[0]) {
+          state.selectedClassId = data.classDetails[0].classId;
+        }
+        if (!state.selectedTeacherId && data.teacherDetails[0]) {
+          state.selectedTeacherId = data.teacherDetails[0].teacherId;
+        }
+        if (!state.selectedStudentId && data.studentDetails[0]) {
+          state.selectedStudentId = data.studentDetails[0].userId;
+        }
       }
 
       async function loadStats() {
         const response = await fetch("/api/stats");
         const data = await response.json();
-        render(data);
+        state.stats = data;
+        hydrateSelection(data);
+        renderCurrentView();
       }
 
       async function postJson(url, payload) {
@@ -340,7 +1026,9 @@
       function connectRealtime() {
         eventSource = new EventSource("/api/stream");
         eventSource.addEventListener("stats", event => {
-          render(JSON.parse(event.data));
+          state.stats = JSON.parse(event.data);
+          hydrateSelection(state.stats);
+          renderCurrentView();
         });
       }
 
