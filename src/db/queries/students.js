@@ -60,11 +60,11 @@ async function searchStudents({ search, classId, teacherId, from, to, page = 1, 
     params.push(teacherId);
   }
   if (from) {
-    conditions.push(`s.created_at >= $${paramIndex++}`);
+    conditions.push(`s.created_at >= $${paramIndex++}::date`);
     params.push(from);
   }
   if (to) {
-    conditions.push(`s.created_at <= $${paramIndex++}`);
+    conditions.push(`s.created_at < ($${paramIndex++}::date + interval '1 day')`);
     params.push(to);
   }
 

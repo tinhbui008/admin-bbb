@@ -54,11 +54,11 @@ async function searchTeachers({ search, classId, from, to, page = 1, limit = 20 
     params.push(classId);
   }
   if (from) {
-    conditions.push(`t.created_at >= $${paramIndex++}`);
+    conditions.push(`t.created_at >= $${paramIndex++}::date`);
     params.push(from);
   }
   if (to) {
-    conditions.push(`t.created_at <= $${paramIndex++}`);
+    conditions.push(`t.created_at < ($${paramIndex++}::date + interval '1 day')`);
     params.push(to);
   }
 

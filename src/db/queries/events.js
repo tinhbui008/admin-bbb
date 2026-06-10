@@ -100,11 +100,11 @@ async function searchEvents({ classId, teacherId, userId, meetingId, eventName, 
     params.push(`%${eventName}%`);
   }
   if (from) {
-    conditions.push(`timestamp >= $${paramIndex++}`);
+    conditions.push(`timestamp >= $${paramIndex++}::date`);
     params.push(from);
   }
   if (to) {
-    conditions.push(`timestamp <= $${paramIndex++}`);
+    conditions.push(`timestamp < ($${paramIndex++}::date + interval '1 day')`);
     params.push(to);
   }
 

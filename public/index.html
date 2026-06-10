@@ -560,11 +560,17 @@
         }
       };
 
+      // Get today's date in YYYY-MM-DD format
+      function getTodayDate() {
+        const today = new Date();
+        return today.toISOString().split("T")[0];
+      }
+
       const historyState = {
         searchType: "classes",
         searchQuery: "",
-        dateFrom: "",
-        dateTo: "",
+        dateFrom: getTodayDate(),
+        dateTo: getTodayDate(),
         page: 1,
         results: null,
         loading: false

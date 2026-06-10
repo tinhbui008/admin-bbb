@@ -81,11 +81,11 @@ async function searchMeetings({ classId, teacherId, from, to, page = 1, limit = 
     params.push(teacherId);
   }
   if (from) {
-    conditions.push(`started_at >= $${paramIndex++}`);
+    conditions.push(`started_at >= $${paramIndex++}::date`);
     params.push(from);
   }
   if (to) {
-    conditions.push(`started_at <= $${paramIndex++}`);
+    conditions.push(`started_at < ($${paramIndex++}::date + interval '1 day')`);
     params.push(to);
   }
 

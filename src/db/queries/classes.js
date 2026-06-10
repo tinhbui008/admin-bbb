@@ -52,11 +52,12 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
     params.push(teacherId);
   }
   if (from) {
-    conditions.push(`c.created_at >= $${paramIndex++}`);
+    conditions.push(`c.created_at >= $${paramIndex++}::date`);
     params.push(from);
   }
   if (to) {
-    conditions.push(`c.created_at <= $${paramIndex++}`);
+    // Include the entire day by adding 1 day to the end date
+    conditions.push(`c.created_at < ($${paramIndex++}::date + interval '1 day')`);
     params.push(to);
   }
 
