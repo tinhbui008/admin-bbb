@@ -52,7 +52,10 @@ function createEmptyStore() {
       lastHookSyncAt: null,
       lastRegistrationAttemptAt: null,
       lastRegistrationResult: null,
-      lastError: null
+      lastError: null,
+      lastWebhookReceivedAt: null,
+      lastWebhookContentType: null,
+      lastWebhookPreview: null
     }
   };
 }
@@ -180,14 +183,14 @@ function parseIncomingBody(rawBody, contentType) {
       fields[key] = value;
     }
 
-    let parsedEvent = fields.event;
-    if (typeof parsedEvent === "string") {
-      try {
-        parsedEvent = JSON.parse(parsedEvent);
-      } catch (error) {
-        parsedEvent = { rawEvent: fields.event };
-      }
-    }
+    const parsedEvent =
+      tryParseJson(fields.event) ??
+      tryParseJson(fields.events) ??
+      tryParseJson(fields.data) ??
+      tryParseJson(rawBody) ??
+      fields.event ??
+      fields.events ??
+      {};
 
     return {
       rawBody,
@@ -209,6 +212,82 @@ function parseIncomingBody(rawBody, contentType) {
     parsedBody: {},
     formFields: {}
   };
+}
+
+function tryParseJson(value) {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return null;
+  }
+}
+
+function collectEventCandidates(value, sink) {
+  if (!value) {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectEventCandidates(item, sink);
+    }
+    return;
+  }
+
+  if (typeof value !== "object") {
+    return;
+  }
+
+  const directArrayKeys = ["events", "event", "data", "messages"];
+  for (const key of directArrayKeys) {
+    const nextValue = value[key];
+    if (Array.isArray(nextValue)) {
+      for (const item of nextValue) {
+        collectEventCandidates(item, sink);
+      }
+    } else if (nextValue && typeof nextValue === "object" && key !== "data") {
+      collectEventCandidates(nextValue, sink);
+    }
+  }
+
+  if (
+    pickFirstValue(value, [
+      "event",
+      "eventName",
+      "data.id",
+      "data.eventName",
+      "data.type",
+      "data.attributes.meeting.internal-meeting-id",
+      "data.attributes.meeting.external-meeting-id",
+      "core.header.name",
+      "envelope.name",
+      "header.name"
+    ]) !== null
+  ) {
+    sink.push(value);
+  }
+}
+
+function extractEventCandidates(parsedBody, formFields) {
+  const candidates = [];
+  collectEventCandidates(parsedBody, candidates);
+
+  for (const key of ["event", "events", "data", "message"]) {
+    const parsedValue = tryParseJson(formFields[key]);
+    if (parsedValue) {
+      collectEventCandidates(parsedValue, candidates);
+    }
+  }
+
+  if (candidates.length === 0 && parsedBody && typeof parsedBody === "object" && !Array.isArray(parsedBody)) {
+    candidates.push(parsedBody);
+  }
+
+  return candidates;
 }
 
 function pickFirstValue(object, paths) {
@@ -234,10 +313,14 @@ function normalizeEvent(payload, formFields) {
     pickFirstValue(payload, [
       "event",
       "eventName",
+      "header.name",
       "data.id",
       "data.eventName",
       "data.type",
       "data.attributes.eventName",
+      "data.attributes.messageName",
+      "data.event.name",
+      "envelope.routing.name",
       "core.header.name",
       "envelope.name"
     ]) || "unknown";
@@ -246,37 +329,58 @@ function normalizeEvent(payload, formFields) {
     pickFirstValue(payload, [
       "meetingId",
       "meeting.id",
+      "meeting.meetingID",
+      "meeting.meetingId",
+      "meetingID",
+      "data.attributes.meeting.internal-meeting-id",
+      "data.attributes.meeting.internalMeetingId",
       "data.attributes.meeting.external-meeting-id",
       "data.attributes.meeting.externalMeetingId",
       "data.attributes.meeting.meetingId",
       "data.attributes.meeting.id",
+      "data.attributes.meeting.name",
       "data.meetingId",
+      "data.meetingID",
+      "data.event.meetingId",
+      "header.meetingId",
       "core.body.meetingId",
       "core.body.props.meetingProp.intId",
-      "core.body.props.meetingProp.extId"
+      "core.body.props.meetingProp.extId",
+      "core.body.props.meetingProp.name"
     ]) || "unknown-meeting";
 
   const userId =
     pickFirstValue(payload, [
       "userId",
       "user.id",
+      "user.userId",
+      "data.attributes.user.internal-user-id",
+      "data.attributes.user.internalUserId",
       "data.attributes.user.userId",
       "data.attributes.user.external-user-id",
+      "data.attributes.user.externalUserId",
       "data.attributes.user.id",
       "data.attributes.attendee.userId",
       "data.attributes.attendee.externalUserId",
+      "data.event.userId",
       "core.body.userId",
-      "core.body.intId"
+      "core.body.intId",
+      "core.body.props.user.intId",
+      "core.body.props.user.userId"
     ]) || null;
 
   const userName =
     pickFirstValue(payload, [
       "userName",
       "user.name",
+      "user.fullname",
       "data.attributes.user.name",
       "data.attributes.user.fullname",
+      "data.attributes.user.fullName",
       "data.attributes.attendee.name",
-      "core.body.name"
+      "data.event.userName",
+      "core.body.name",
+      "core.body.props.user.name"
     ]) || null;
 
   const classId =
@@ -286,8 +390,12 @@ function normalizeEvent(payload, formFields) {
       "meta.classId",
       "data.classId",
       "data.metadata.classId",
+      "data.attributes.meeting.meta_classId",
+      "data.attributes.meeting.meta_classid",
       "data.attributes.meeting.classId",
-      "data.attributes.meeting.metadata.classId"
+      "data.attributes.meeting.metadata.classId",
+      "core.body.props.meetingProp.metadata.classId",
+      "core.body.props.meetingProp.metadata.classid"
     ]) || "unmapped";
 
   const teacherId =
@@ -297,8 +405,12 @@ function normalizeEvent(payload, formFields) {
       "meta.teacherId",
       "data.teacherId",
       "data.metadata.teacherId",
+      "data.attributes.meeting.meta_teacherId",
+      "data.attributes.meeting.meta_teacherid",
       "data.attributes.meeting.teacherId",
-      "data.attributes.meeting.metadata.teacherId"
+      "data.attributes.meeting.metadata.teacherId",
+      "core.body.props.meetingProp.metadata.teacherId",
+      "core.body.props.meetingProp.metadata.teacherid"
     ]) || null;
 
   const timestamp =
@@ -323,6 +435,26 @@ function normalizeEvent(payload, formFields) {
     timestamp,
     raw: payload
   };
+}
+
+function isMeaningfulEvent(normalized) {
+  if (!normalized) {
+    return false;
+  }
+
+  if (normalized.eventName !== "unknown") {
+    return true;
+  }
+
+  if (normalized.meetingId !== "unknown-meeting") {
+    return true;
+  }
+
+  if (normalized.userId || normalized.userName || normalized.classId !== "unmapped" || normalized.teacherId) {
+    return true;
+  }
+
+  return false;
 }
 
 function isJoinEvent(eventName) {
@@ -442,9 +574,22 @@ function updateStoreFromEvent(normalized, checksumValid) {
 }
 
 function buildStats(store) {
-  const meetings = Object.values(store.meetings);
+  const meetings = Object.values(store.meetings).filter(meeting => {
+    const hasSignals =
+      (meeting.joinEvents || 0) > 0 ||
+      (meeting.leaveEvents || 0) > 0 ||
+      (meeting.createdEvents || 0) > 0 ||
+      (meeting.endedEvents || 0) > 0 ||
+      Object.keys(meeting.users || {}).length > 0;
+
+    if (hasSignals) {
+      return true;
+    }
+
+    return meeting.meetingId !== "unknown-meeting";
+  });
   const users = Object.values(store.users);
-  const classes = Object.values(store.classes);
+  const classes = Object.values(store.classes).filter(item => item.classId !== "unmapped" || Object.keys(item.meetings || {}).length > 0);
   const classMap = new Map();
   const teacherMap = new Map();
   const studentMap = new Map();
@@ -507,7 +652,7 @@ function buildStats(store) {
     teacherMap.set(teacherId, teacherEntry);
   }
 
-  for (const event of store.recentEvents) {
+  for (const event of store.recentEvents.filter(isMeaningfulEvent)) {
     if (event.classId) {
       const classEntry = classMap.get(event.classId) || {
         classId: event.classId,
@@ -573,7 +718,7 @@ function buildStats(store) {
       }
     }
 
-    for (const event of store.recentEvents) {
+    for (const event of store.recentEvents.filter(isMeaningfulEvent)) {
       if (event.userId === user.userId) {
         if (event.classId) {
           studentEntry.classIds.add(event.classId);
@@ -666,7 +811,7 @@ function buildStats(store) {
           joinEvents: item.joinEvents,
           leaveEvents: item.leaveEvents
         },
-        recentEvents: store.recentEvents.filter(event => event.classId === item.classId).slice(0, 12)
+        recentEvents: store.recentEvents.filter(event => isMeaningfulEvent(event) && event.classId === item.classId).slice(0, 12)
       };
     })
     .sort((a, b) => b.totals.joinEvents - a.totals.joinEvents);
@@ -683,7 +828,7 @@ function buildStats(store) {
         joinEvents: item.joinEvents,
         leaveEvents: item.leaveEvents
       },
-      recentEvents: store.recentEvents.filter(event => (event.teacherId || "unassigned") === item.teacherId).slice(0, 10)
+      recentEvents: store.recentEvents.filter(event => isMeaningfulEvent(event) && (event.teacherId || "unassigned") === item.teacherId).slice(0, 10)
     }))
     .sort((a, b) => b.totals.joinEvents - a.totals.joinEvents);
 
@@ -698,7 +843,7 @@ function buildStats(store) {
         leaves: item.leaves
       },
       lastMeetingId: item.lastMeetingId,
-      recentEvents: store.recentEvents.filter(event => event.userId === item.userId).slice(0, 10)
+      recentEvents: store.recentEvents.filter(event => isMeaningfulEvent(event) && event.userId === item.userId).slice(0, 10)
     }))
     .sort((a, b) => (b.totals.joins - a.totals.joins) || (b.totals.leaves - a.totals.leaves));
 
@@ -736,7 +881,7 @@ function buildStats(store) {
     classDetails,
     teacherDetails,
     studentDetails,
-    recentEvents: store.recentEvents
+    recentEvents: store.recentEvents.filter(isMeaningfulEvent)
   };
 }
 
@@ -1077,14 +1222,29 @@ async function handleWebhook(req, res) {
       return;
     }
 
-    const normalized = normalizeEvent(parsed.parsedBody, parsed.formFields);
-    const store = updateStoreFromEvent(normalized, true);
+    const candidates = extractEventCandidates(parsed.parsedBody, parsed.formFields);
+    const normalizedEvents = candidates
+      .map(candidate => normalizeEvent(candidate, parsed.formFields))
+      .filter(isMeaningfulEvent);
+
+    persistStore(store => {
+      store.webhookStatus.lastWebhookReceivedAt = new Date().toISOString();
+      store.webhookStatus.lastWebhookContentType = req.headers["content-type"] || null;
+      store.webhookStatus.lastWebhookPreview = rawBody.slice(0, 4000);
+      return store;
+    });
+
+    let lastStore = readStore();
+    for (const normalized of normalizedEvents) {
+      lastStore = updateStoreFromEvent(normalized, true);
+    }
 
     sendJson(res, 200, {
       ok: true,
       checksumAlgorithm: checksum.algorithm,
-      received: normalized,
-      totals: buildStats(store).totals
+      receivedCount: normalizedEvents.length,
+      received: normalizedEvents,
+      totals: buildStats(lastStore).totals
     });
   } catch (error) {
     sendJson(res, 400, {
