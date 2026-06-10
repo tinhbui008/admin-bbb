@@ -1,5 +1,32 @@
 const db = require("../index");
 
+function normalizeTimestamp(value) {
+  if (!value) {
+    return new Date().toISOString();
+  }
+
+  // Already ISO string
+  if (typeof value === "string" && value.includes("T")) {
+    return value;
+  }
+
+  // Unix timestamp (seconds or milliseconds)
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    // If less than year 2000 in ms, assume seconds
+    const ms = numeric < 1e12 ? numeric * 1000 : numeric;
+    return new Date(ms).toISOString();
+  }
+
+  // Try parsing as date string
+  const parsed = new Date(value);
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+
+  return new Date().toISOString();
+}
+
 async function insertEvent(event) {
   const result = await db.query(
     `INSERT INTO events (
@@ -16,7 +43,7 @@ async function insertEvent(event) {
       event.teacherId,
       event.meetingName,
       event.role,
-      event.timestamp || new Date().toISOString(),
+      normalizeTimestamp(event.timestamp),
       event.checksumValid !== false,
       JSON.stringify(event.raw || {})
     ]
