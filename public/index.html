@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BBB Admin Dashboard</title>
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --accent: #0f766e;
+        --accent-2: #155e75;
+        --warn: #b91c1c;
+        --border: #dbe3ee;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(180deg, #eef7f6 0%, var(--bg) 35%);
+        color: var(--text);
+      }
+
+      h1, h2 {
+        margin: 0 0 12px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .button {
+        border: 0;
+        background: var(--accent);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+
+      .button.secondary {
+        background: var(--accent-2);
+      }
+
+      .button.warn {
+        background: var(--warn);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+
+      .value {
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .panels {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th, td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+        vertical-align: top;
+      }
+
+      .mono {
+        font-family: Consolas, monospace;
+        font-size: 12px;
+        word-break: break-all;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 4px 10px;
+        background: #d1fae5;
+        color: #065f46;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .pill.bad {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .footer-note {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 980px) {
+        .panels {
+          grid-template-columns: 1fr;
+        }
+
+        .header {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div>
+        <h1>BBB Admin Dashboard</h1>
+        <div class="label">Realtime webhook monitoring for BigBlueButton</div>
+      </div>
+      <div class="actions">
+        <button class="button secondary" id="registerHookButton">Register Global Hook</button>
+        <button class="button secondary" id="listHooksButton">List Hooks</button>
+        <button class="button warn" id="resetButton">Reset Data</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <h2>Hook Status</h2>
+      <div class="status-grid" id="hookStatus"></div>
+      <div class="footer-note" id="statusMessage"></div>
+    </div>
+
+    <div class="grid" id="summaryGrid"></div>
+
+    <div class="panels">
+      <div class="card">
+        <h2>Top Meetings</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Meeting</th>
+              <th>Class</th>
+              <th>Teacher</th>
+              <th>Users</th>
+              <th>Joins</th>
+            </tr>
+          </thead>
+          <tbody id="meetingsTable"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Recent Events</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Meeting</th>
+              <th>User</th>
+              <th>Check</th>
+            </tr>
+          </thead>
+          <tbody id="eventsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      let eventSource;
+
+      function item(label, value, mono = false) {
+        return `
+          <div class="card">
+            <div class="label">${label}</div>
+            <div class="${mono ? "mono" : "value"}">${value ?? "-"}</div>
+          </div>
+        `;
+      }
+
+      function render(data) {
+        const summaryItems = [
+          ["Tong events", data.totals.events],
+          ["Meeting created", data.totals.meetingsCreated],
+          ["Meeting ended", data.totals.meetingsEnded],
+          ["Participant joined", data.totals.participantsJoined],
+          ["Participant left", data.totals.participantsLeft],
+          ["Checksum ok", data.totals.checksumVerified],
+          ["Checksum rejected", data.totals.checksumRejected],
+          ["Meetings duy nhat", data.summary.uniqueMeetings],
+          ["Users duy nhat", data.summary.uniqueUsers],
+          ["Classes duy nhat", data.summary.uniqueClasses]
+        ];
+
+        document.getElementById("summaryGrid").innerHTML = summaryItems
+          .map(([label, value]) => item(label, value))
+          .join("");
+
+        const hook = data.hook || {};
+        const hookItems = [
+          item("Callback URL", hook.callbackUrl || "Chua cau hinh", true),
+          item("BBB API", hook.bbbApiBaseUrl || "Chua cau hinh", true),
+          item("Hook ID", hook.registeredHookId || "Chua dang ky", true),
+          item("Raw mode", String(hook.getRaw)),
+          item("Event IDs", hook.eventIds || "Tat ca", true),
+          item("Last register", hook.lastRegistrationAttemptAt || "-", true)
+        ];
+
+        document.getElementById("hookStatus").innerHTML = hookItems.join("");
+
+        const hookResult = hook.lastRegistrationResult
+          ? `${hook.lastRegistrationResult.status || ""} ${hook.lastRegistrationResult.message || ""}`.trim()
+          : "";
+
+        const configured = Boolean(hook.configured);
+        const missingEnv = Array.isArray(hook.missingEnv) ? [...hook.missingEnv] : [];
+        if (!configured && missingEnv.length === 0) {
+          if (hook.hasApiBaseUrl === false) {
+            missingEnv.push("BBB_API_BASE_URL");
+          }
+          if (hook.hasSharedSecret === false) {
+            missingEnv.push("BBB_SHARED_SECRET");
+          }
+          if (hook.hasCallbackUrl === false) {
+            missingEnv.push("BBB_CALLBACK_URL");
+          }
+        }
+        const statusText = configured ? "Configured" : `Missing: ${missingEnv.join(", ") || "BBB env config"}`;
+        const pill = `<span class="pill ${configured ? "" : "bad"}">${statusText}</span>`;
+        const lastError = hook.lastError ? ` Error: ${hook.lastError}` : "";
+        const lastResult = hookResult ? ` Result: ${hookResult}` : "";
+        const helpText = !configured && missingEnv.includes("BBB_CALLBACK_URL")
+          ? " Set BBB_CALLBACK_URL to your public dashboard endpoint, for example https://admin.yourdomain.com/webhook/bbb."
+          : "";
+        document.getElementById("statusMessage").innerHTML = `${pill}${lastResult}${lastError}${helpText}`;
+
+        document.getElementById("meetingsTable").innerHTML = data.topMeetings
+          .map(item => `
+            <tr>
+              <td class="mono">${item.meetingId}</td>
+              <td>${item.classId || "-"}</td>
+              <td>${item.teacherId || "-"}</td>
+              <td>${item.participants}</td>
+              <td>${item.joinEvents}</td>
+            </tr>
+          `)
+          .join("");
+
+        document.getElementById("eventsTable").innerHTML = data.recentEvents
+          .slice(0, 12)
+          .map(item => `
+            <tr>
+              <td>${item.eventName}</td>
+              <td class="mono">${item.meetingId}</td>
+              <td>${item.userName || item.userId || "-"}</td>
+              <td>${item.checksumValid ? "OK" : "Fail"}</td>
+            </tr>
+          `)
+          .join("");
+      }
+
+      async function loadStats() {
+        const response = await fetch("/api/stats");
+        const data = await response.json();
+        render(data);
+      }
+
+      async function postJson(url) {
+        const response = await fetch(url, { method: "POST" });
+        return response.json();
+      }
+
+      async function listHooks() {
+        const response = await fetch("/api/hooks/list");
+        const data = await response.json();
+        if (data.ok) {
+          const hooks = data.hooks.map(hook => `${hook.hookID} -> ${hook.callbackURL}`).join("\n") || "No hooks";
+          window.alert(hooks);
+        } else {
+          window.alert(data.error || "Cannot list hooks");
+        }
+      }
+
+      function connectRealtime() {
+        eventSource = new EventSource("/api/stream");
+        eventSource.addEventListener("stats", event => {
+          render(JSON.parse(event.data));
+        });
+      }
+
+      document.getElementById("resetButton").addEventListener("click", async () => {
+        await postJson("/api/reset");
+      });
+
+      document.getElementById("registerHookButton").addEventListener("click", async () => {
+        const data = await postJson("/api/hooks/register");
+        window.alert(data.ok ? `Hook registered: ${data.hookID || "ok"}` : data.error);
+      });
+
+      document.getElementById("listHooksButton").addEventListener("click", listHooks);
+
+      loadStats();
+      connectRealtime();
+    </script>
+  </body>
+</html>

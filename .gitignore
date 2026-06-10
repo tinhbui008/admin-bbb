@@ -1,0 +1,4 @@
+data/
+.env
+tmp-server.log
+tmp-server.err.log
