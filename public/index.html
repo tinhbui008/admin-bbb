@@ -157,48 +157,61 @@
     <div class="header">
       <div>
         <h1>BBB Admin Dashboard</h1>
-        <div class="label">Realtime webhook monitoring for BigBlueButton</div>
+        <div class="label">Thong tin lop hoc, giao vien va hoc sinh tu BBB webhook</div>
       </div>
       <div class="actions">
-        <button class="button secondary" id="registerHookButton">Register Global Hook</button>
-        <button class="button secondary" id="listHooksButton">List Hooks</button>
         <button class="button warn" id="resetButton">Reset Data</button>
       </div>
-    </div>
-
-    <div class="card" style="margin-bottom: 24px;">
-      <h2>Hook Status</h2>
-      <div class="status-grid" id="hookStatus"></div>
-      <div class="footer-note" id="statusMessage"></div>
-      <table style="margin-top: 16px;">
-        <thead>
-          <tr>
-            <th>Hook ID</th>
-            <th>Callback</th>
-            <th>Raw</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="hooksTable"></tbody>
-      </table>
     </div>
 
     <div class="grid" id="summaryGrid"></div>
 
     <div class="panels">
       <div class="card">
-        <h2>Top Meetings</h2>
+        <h2>Lop Hoc</h2>
         <table>
           <thead>
             <tr>
-              <th>Meeting</th>
               <th>Class</th>
-              <th>Teacher</th>
-              <th>Users</th>
+              <th>Teachers</th>
+              <th>Students</th>
+              <th>Meetings</th>
               <th>Joins</th>
             </tr>
           </thead>
-          <tbody id="meetingsTable"></tbody>
+          <tbody id="classesTable"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Giao Vien</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Teacher</th>
+              <th>Classes</th>
+              <th>Students</th>
+              <th>Meetings</th>
+              <th>Joins</th>
+            </tr>
+          </thead>
+          <tbody id="teachersTable"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Hoc Sinh</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>ID</th>
+              <th>Joins</th>
+              <th>Leaves</th>
+              <th>Last Meeting</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTable"></tbody>
         </table>
       </div>
 
@@ -208,9 +221,9 @@
           <thead>
             <tr>
               <th>Event</th>
-              <th>Meeting</th>
-              <th>User</th>
-              <th>Check</th>
+              <th>Class</th>
+              <th>Teacher</th>
+              <th>Student</th>
             </tr>
           </thead>
           <tbody id="eventsTable"></tbody>
@@ -232,103 +245,81 @@
 
       function render(data) {
         const summaryItems = [
-          ["Tong events", data.totals.events],
-          ["Meeting created", data.totals.meetingsCreated],
-          ["Meeting ended", data.totals.meetingsEnded],
-          ["Participant joined", data.totals.participantsJoined],
-          ["Participant left", data.totals.participantsLeft],
-          ["Checksum ok", data.totals.checksumVerified],
-          ["Checksum rejected", data.totals.checksumRejected],
-          ["Meetings duy nhat", data.summary.uniqueMeetings],
-          ["Users duy nhat", data.summary.uniqueUsers],
-          ["Classes duy nhat", data.summary.uniqueClasses]
+          ["Tong lop hoc", data.summary.uniqueClasses],
+          ["Tong giao vien", data.summary.uniqueTeachers],
+          ["Tong hoc sinh", data.summary.uniqueUsers],
+          ["Tong meetings", data.summary.uniqueMeetings],
+          ["Luot vao lop", data.totals.participantsJoined],
+          ["Luot roi lop", data.totals.participantsLeft]
         ];
 
         document.getElementById("summaryGrid").innerHTML = summaryItems
           .map(([label, value]) => item(label, value))
           .join("");
 
-        const hook = data.hook || {};
-        const hookItems = [
-          item("Callback URL", hook.callbackUrl || "Chua cau hinh", true),
-          item("Expected URL", hook.expectedCallbackUrl || hook.callbackUrl || "Chua cau hinh", true),
-          item("BBB API", hook.bbbApiBaseUrl || "Chua cau hinh", true),
-          item("Hook ID", hook.registeredHookId || "Chua dang ky", true),
-          item("Raw mode", String(hook.getRaw)),
-          item("Event IDs", hook.eventIds || "Tat ca", true),
-          item("Matching hooks", Array.isArray(hook.matchingHookIds) ? hook.matchingHookIds.length : 0),
-          item("Last register", hook.lastRegistrationAttemptAt || "-", true)
-        ];
-
-        document.getElementById("hookStatus").innerHTML = hookItems.join("");
-
-        const hookResult = hook.lastRegistrationResult
-          ? `${hook.lastRegistrationResult.status || ""} ${hook.lastRegistrationResult.message || ""}`.trim()
-          : "";
-
-        const configured = Boolean(hook.configured);
-        const missingEnv = Array.isArray(hook.missingEnv) ? [...hook.missingEnv] : [];
-        if (!configured && missingEnv.length === 0) {
-          if (hook.hasApiBaseUrl === false) {
-            missingEnv.push("BBB_API_BASE_URL");
-          }
-          if (hook.hasSharedSecret === false) {
-            missingEnv.push("BBB_SHARED_SECRET");
-          }
-          if (hook.hasCallbackUrl === false) {
-            missingEnv.push("BBB_CALLBACK_URL");
-          }
-        }
-        const statusText = configured ? "Configured" : `Missing: ${missingEnv.join(", ") || "BBB env config"}`;
-        const pill = `<span class="pill ${configured ? "" : "bad"}">${statusText}</span>`;
-        const lastError = hook.lastError ? ` Error: ${hook.lastError}` : "";
-        const lastResult = hookResult ? ` Result: ${hookResult}` : "";
-        const helpText = !configured && missingEnv.includes("BBB_CALLBACK_URL")
-          ? " Set BBB_CALLBACK_URL to your public dashboard endpoint, for example https://admin.yourdomain.com/webhook/bbb."
-          : "";
-        document.getElementById("statusMessage").innerHTML = `${pill}${lastResult}${lastError}${helpText}`;
-        document.getElementById("hooksTable").innerHTML = (hook.allHooks || [])
-          .map(row => `
+        document.getElementById("classesTable").innerHTML = data.topClasses
+          .map(item => `
             <tr>
-              <td class="mono">${row.hookID || "-"}</td>
-              <td class="mono">${row.callbackURL || "-"}</td>
-              <td>${row.rawData || "-"}</td>
-              <td><button class="button warn" data-hook-id="${row.hookID}">Delete</button></td>
+              <td>${item.classId || "-"}</td>
+              <td>${item.teachers}</td>
+              <td>${item.students}</td>
+              <td>${item.meetings}</td>
+              <td>${item.joinEvents}</td>
             </tr>
           `)
           .join("") || `
             <tr>
-              <td colspan="4">No hooks</td>
+              <td colspan="5">Chua co du lieu lop hoc</td>
             </tr>
           `;
 
-        document.querySelectorAll("[data-hook-id]").forEach(button => {
-          button.addEventListener("click", () => destroyHook(button.dataset.hookId));
-        });
-
-        document.getElementById("meetingsTable").innerHTML = data.topMeetings
+        document.getElementById("teachersTable").innerHTML = data.topTeachers
           .map(item => `
             <tr>
-              <td class="mono">${item.meetingId}</td>
-              <td>${item.classId || "-"}</td>
               <td>${item.teacherId || "-"}</td>
-              <td>${item.participants}</td>
+              <td>${item.classes}</td>
+              <td>${item.students}</td>
+              <td>${item.meetings}</td>
               <td>${item.joinEvents}</td>
             </tr>
           `)
-          .join("");
+          .join("") || `
+            <tr>
+              <td colspan="5">Chua co du lieu giao vien</td>
+            </tr>
+          `;
+
+        document.getElementById("studentsTable").innerHTML = data.topStudents
+          .map(item => `
+            <tr>
+              <td>${item.userName || "-"}</td>
+              <td class="mono">${item.userId || "-"}</td>
+              <td>${item.joins}</td>
+              <td>${item.leaves}</td>
+              <td class="mono">${item.lastMeetingId || "-"}</td>
+            </tr>
+          `)
+          .join("") || `
+            <tr>
+              <td colspan="5">Chua co du lieu hoc sinh</td>
+            </tr>
+          `;
 
         document.getElementById("eventsTable").innerHTML = data.recentEvents
           .slice(0, 12)
           .map(item => `
             <tr>
               <td>${item.eventName}</td>
-              <td class="mono">${item.meetingId}</td>
+              <td>${item.classId || "-"}</td>
+              <td>${item.teacherId || "-"}</td>
               <td>${item.userName || item.userId || "-"}</td>
-              <td>${item.checksumValid ? "OK" : "Fail"}</td>
             </tr>
           `)
-          .join("");
+          .join("") || `
+            <tr>
+              <td colspan="4">Chua co event gan day</td>
+            </tr>
+          `;
       }
 
       async function loadStats() {
@@ -346,35 +337,6 @@
         return response.json();
       }
 
-      async function listHooks() {
-        const response = await fetch("/api/hooks/list");
-        const data = await response.json();
-        if (data.ok) {
-          await loadStats();
-        } else {
-          window.alert(data.error || "Cannot list hooks");
-        }
-      }
-
-      async function destroyHook(hookID) {
-        if (!hookID) {
-          return;
-        }
-
-        const confirmed = window.confirm(`Delete hook ${hookID}?`);
-        if (!confirmed) {
-          return;
-        }
-
-        const data = await postJson("/api/hooks/destroy", { hookID });
-        if (!data.ok) {
-          window.alert(data.error || "Cannot delete hook");
-          return;
-        }
-
-        await loadStats();
-      }
-
       function connectRealtime() {
         eventSource = new EventSource("/api/stream");
         eventSource.addEventListener("stats", event => {
@@ -385,13 +347,6 @@
       document.getElementById("resetButton").addEventListener("click", async () => {
         await postJson("/api/reset");
       });
-
-      document.getElementById("registerHookButton").addEventListener("click", async () => {
-        const data = await postJson("/api/hooks/register");
-        window.alert(data.ok ? `Hook registered: ${data.hookID || "ok"}` : data.error);
-      });
-
-      document.getElementById("listHooksButton").addEventListener("click", listHooks);
 
       loadStats();
       connectRealtime();

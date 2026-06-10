@@ -442,6 +442,8 @@ function buildStats(store) {
   const meetings = Object.values(store.meetings);
   const users = Object.values(store.users);
   const classes = Object.values(store.classes);
+  const classMap = new Map();
+  const teacherMap = new Map();
   const hasApiBaseUrl = Boolean(CONFIG.bbbApiBaseUrl);
   const hasSharedSecret = Boolean(CONFIG.bbbSharedSecret);
   const hasCallbackUrl = Boolean(CONFIG.callbackUrl || store.webhookStatus.callbackUrl);
@@ -459,12 +461,51 @@ function buildStats(store) {
     missingEnv.push("BBB_CALLBACK_URL");
   }
 
+  for (const meeting of meetings) {
+    const classId = meeting.classId || "unmapped";
+    const classEntry = classMap.get(classId) || {
+      classId,
+      meetingIds: new Set(),
+      teacherIds: new Set(),
+      studentIds: new Set(),
+      joinEvents: 0
+    };
+    classEntry.meetingIds.add(meeting.meetingId);
+    classEntry.joinEvents += meeting.joinEvents || 0;
+    if (meeting.teacherId) {
+      classEntry.teacherIds.add(meeting.teacherId);
+    }
+    for (const userId of Object.keys(meeting.users || {})) {
+      classEntry.studentIds.add(userId);
+    }
+    classMap.set(classId, classEntry);
+
+    const teacherId = meeting.teacherId || "unassigned";
+    const teacherEntry = teacherMap.get(teacherId) || {
+      teacherId,
+      classIds: new Set(),
+      meetingIds: new Set(),
+      studentIds: new Set(),
+      joinEvents: 0
+    };
+    teacherEntry.meetingIds.add(meeting.meetingId);
+    teacherEntry.joinEvents += meeting.joinEvents || 0;
+    if (meeting.classId) {
+      teacherEntry.classIds.add(meeting.classId);
+    }
+    for (const userId of Object.keys(meeting.users || {})) {
+      teacherEntry.studentIds.add(userId);
+    }
+    teacherMap.set(teacherId, teacherEntry);
+  }
+
   return {
     totals: store.totals,
     summary: {
       uniqueMeetings: meetings.length,
       uniqueUsers: users.length,
-      uniqueClasses: classes.filter(item => item.classId !== "unmapped").length
+      uniqueClasses: classes.filter(item => item.classId !== "unmapped").length,
+      uniqueTeachers: Array.from(teacherMap.keys()).filter(item => item !== "unassigned").length
     },
     hook: {
       ...store.webhookStatus,
@@ -484,6 +525,36 @@ function buildStats(store) {
         leaveEvents: meeting.leaveEvents
       }))
       .sort((a, b) => b.joinEvents - a.joinEvents)
+      .slice(0, 10),
+    topClasses: Array.from(classMap.values())
+      .map(item => ({
+        classId: item.classId,
+        meetings: item.meetingIds.size,
+        teachers: item.teacherIds.size,
+        students: item.studentIds.size,
+        joinEvents: item.joinEvents
+      }))
+      .sort((a, b) => b.joinEvents - a.joinEvents)
+      .slice(0, 10),
+    topTeachers: Array.from(teacherMap.values())
+      .map(item => ({
+        teacherId: item.teacherId,
+        classes: item.classIds.size,
+        meetings: item.meetingIds.size,
+        students: item.studentIds.size,
+        joinEvents: item.joinEvents
+      }))
+      .sort((a, b) => b.joinEvents - a.joinEvents)
+      .slice(0, 10),
+    topStudents: users
+      .map(user => ({
+        userId: user.userId,
+        userName: user.userName,
+        joins: user.joinCount || 0,
+        leaves: user.leaveCount || 0,
+        lastMeetingId: user.lastMeetingId || null
+      }))
+      .sort((a, b) => (b.joins - a.joins) || (b.leaves - a.leaves))
       .slice(0, 10),
     recentEvents: store.recentEvents
   };
