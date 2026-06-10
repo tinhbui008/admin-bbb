@@ -515,9 +515,9 @@
               <p id="tabDescription">Chon mot lop hoc de xem chi tiet giao vien va hoc sinh.</p> -->
             </div>
             <div class="tab-bar">
-              <button class="tab-button active" data-tab="classes">Lớp học</button>
-              <button class="tab-button" data-tab="teachers">Giáo viên</button>
-              <button class="tab-button" data-tab="students">Học sinh</button>
+              <button class="tab-button active" data-tab="classes">Classes</button>
+              <button class="tab-button" data-tab="teachers">Teachers</button>
+              <button class="tab-button" data-tab="students">Students</button>
             </div>
           </div>
           <div class="chip-row" id="tabChips"></div>
@@ -542,16 +542,16 @@
 
       const TAB_META = {
         classes: {
-          title: "Lop hoc",
-          description: "Chon mot lop hoc de xem chi tiet giao vien va hoc sinh."
+          title: "Classes",
+          description: "Select a class to view detailed teacher and student information."
         },
         teachers: {
-          title: "Giao vien",
-          description: "Quan sat giao vien theo so lop, so hoc sinh va muc do tham gia cua cac lop."
+          title: "Teachers",
+          description: "Monitor teachers by class count, student count, and class participation."
         },
         students: {
-          title: "Hoc sinh",
-          description: "Theo doi hoc sinh dang xuat hien tren he thong, so lan tham gia va lop hoc lien quan."
+          title: "Students",
+          description: "Track students currently active on the system, attendance counts, and related classes."
         }
       };
 
@@ -612,12 +612,12 @@
         }
 
         const items = [
-          ["Tổng lớp học", data.summary.uniqueClasses],
-          ["Tổng giáo viên", data.summary.uniqueTeachers],
-          ["Tổng học sinh", data.summary.uniqueUsers],
-          ["Tổng meetings", data.summary.uniqueMeetings],
-          ["Lượt vào lớp", data.totals.participantsJoined],
-          ["Lượt rời lớp", data.totals.participantsLeft],
+          ["Classes", data.summary.uniqueClasses],
+          ["Teachers", data.summary.uniqueTeachers],
+          ["Students", data.summary.uniqueUsers],
+          ["Meetings", data.summary.uniqueMeetings],
+          ["Joins", data.totals.participantsJoined],
+          ["Leaves", data.totals.participantsLeft],
           ["Meeting created", data.totals.meetingsCreated],
           ["Meeting ended", data.totals.meetingsEnded]
         ];
@@ -645,15 +645,15 @@
                 <span class="chip">${room.running || "unknown"}</span>
               </div>
               <div class="muted" style="margin-top: 12px;">
-                Lớp: ${room.meetingName || "-"}<br />
-                Giáo viên: ${room.teacherId || "-"}
+                Class: ${room.meetingName || "-"}<br />
+                Teacher: ${room.teacherId || "-"}
               </div>
             </div>
           `)
           .join("") || `
             <div class="empty-state">
               <div class="eyebrow">Live Rooms</div>
-              <h3>Chưa có lớp nào đang hoạt động</h3>
+              <h3>No active classes</h3>
             </div>
           `;
       }
@@ -671,19 +671,19 @@
 
         const chips = {
           classes: [
-            `Top ${data.topClasses.length} lop`,
-            `${data.summary.uniqueClasses} lop duy nhat`,
-            `${data.totals.participantsJoined} luot join`
+            `Top ${data.topClasses.length} classes`,
+            `${data.summary.uniqueClasses} unique classes`,
+            `${data.totals.participantsJoined} joins`
           ],
           teachers: [
-            `${data.summary.uniqueTeachers} giao vien`,
-            `${data.topTeachers.length} giao vien hien thi`,
+            `${data.summary.uniqueTeachers} teachers`,
+            `${data.topTeachers.length} teachers displayed`,
             `${data.summary.uniqueMeetings} meetings`
           ],
           students: [
-            `${data.summary.uniqueUsers} hoc sinh`,
-            `${data.topStudents.length} hoc sinh noi bat`,
-            `${data.totals.participantsLeft} luot leave`
+            `${data.summary.uniqueUsers} students`,
+            `${data.topStudents.length} top students`,
+            `${data.totals.participantsLeft} leaves`
           ]
         };
 
@@ -701,11 +701,11 @@
           <table>
             <thead>
               <tr>
-                <th>Lớp</th>
-                <th>Giáo viên</th>
-                <th>Học sinh</th>
-                <th>Tham gia</th>
-                <th>Rời khỏi</th>
+                <th>Class</th>
+                <th>Teacher</th>
+                <th>Student</th>
+                <th>Join</th>
+                <th>Leave</th>
               </tr>
             </thead>
             <tbody>
@@ -723,7 +723,7 @@
                 </tr>
               `).join("") || `
                 <tr>
-                  <td colspan="6" class="muted">Chưa có dữ liệu lớp học</td>
+                  <td colspan="5" class="muted">No class data available</td>
                 </tr>
               `}
             </tbody>
@@ -736,11 +736,11 @@
           <table>
             <thead>
               <tr>
-                <th>Giáo viên</th>
-                <th>Lớp</th>
-                <th>Học sinh</th>
-                <th>Tham gia</th>
-                <th>Rời khỏi</th>
+                <th>Teacher</th>
+                <th>Class</th>
+                <th>Student</th>
+                <th>Join</th>
+                <th>Leave</th>
               </tr>
             </thead>
             <tbody>
@@ -759,7 +759,7 @@
                 </tr>
               `).join("") || `
                 <tr>
-                  <td colspan="6" class="muted">Chua co du lieu giao vien</td>
+                  <td colspan="6" class="muted">No teacher data available</td>
                 </tr>
               `}
             </tbody>
@@ -796,7 +796,7 @@
                 </tr>
               `).join("") || `
                 <tr>
-                  <td colspan="6" class="muted">Chua co du lieu hoc sinh</td>
+                  <td colspan="6" class="muted">No student data available</td>
                 </tr>
               `}
             </tbody>
@@ -914,8 +914,8 @@
           return `
             <div class="empty-state">
               <div class="eyebrow">Class Detail</div>
-              <h3>Chua co lop hoc nao</h3>
-              <p class="muted" style="margin-top: 8px;">Khi webhook bat dau ghi nhan du lieu, thong tin lop hoc se hien o day.</p>
+              <h3>No class data available</h3>
+              <p class="muted" style="margin-top: 8px;">When the webhook starts recording data, class information will appear here.</p>
             </div>
           `;
         }
@@ -932,19 +932,19 @@
           </div>
           <div class="metric-grid">
             <div class="metric-box">
-              <div class="eyebrow">Giáo viên</div>
+              <div class="eyebrow">Teachers</div>
               <strong>${selected.totals.teachers}</strong>
             </div>
             <div class="metric-box">
-              <div class="eyebrow">Học sinh</div>
+              <div class="eyebrow">Students</div>
               <strong>${selected.totals.students}</strong>
             </div>
             <div class="metric-box">
-              <div class="eyebrow">Lượt vào</div>
+              <div class="eyebrow">Joins</div>
               <strong>${selected.totals.joinEvents}</strong>
             </div>
             <div class="metric-box">
-              <div class="eyebrow">Lượt rời</div>
+              <div class="eyebrow">Leaves</div>
               <strong>${selected.totals.leaveEvents}</strong>
             </div>
           </div>
@@ -953,18 +953,18 @@
             ${(selected.teachers || []).map(item => `
               <div class="list-item">
                 <strong>${item.teacherId || "-"}</strong>
-                <div class="muted">${item.meetings} meetings trong lop nay</div>
+                <div class="muted">${item.meetings} meetings in this class</div>
               </div>
-            `).join("") || `<div class="list-item muted">Chua co giao vien</div>`}
+            `).join("") || `<div class="list-item muted">No teachers</div>`}
           </div>
           <div class="list-block">
-            <h3>Học sinh nổi bật</h3>
+            <h3>Top students</h3>
             ${(selected.students || []).slice(0, 6).map(item => `
               <div class="list-item">
                 <strong>${item.userName || item.userId}</strong>
                 <div class="muted">${item.joinCount} joins • ${item.leaveCount} leaves • ${selected.className || selected.classId}</div>
               </div>
-            `).join("") || `<div class="list-item muted">Chua co hoc sinh</div>`}
+            `).join("") || `<div class="list-item muted">No students</div>`}
           </div>
           ${renderParticipantActivityTable(selected.participantActivity || [])}
         `;
@@ -979,7 +979,7 @@
           return `
             <div class="empty-state">
               <div class="eyebrow">Teacher Detail</div>
-              <h3>Chua co giao vien nao</h3>
+              <h3>No teachers found</h3>
             </div>
           `;
         }
@@ -1013,12 +1013,12 @@
             </div>
           </div>
           <div class="list-block">
-            <h3>Lop phu trach</h3>
+            <h3>Classes</h3>
             ${selected.classNames.map(className => `
               <div class="list-item">
                 <strong>${className}</strong>
               </div>
-            `).join("") || `<div class="list-item muted">Chua gan lop hoc</div>`}
+            `).join("") || `<div class="list-item muted">No classes assigned</div>`}
           </div>
         `;
       }
@@ -1032,7 +1032,7 @@
           return `
             <div class="empty-state">
               <div class="eyebrow">Student Detail</div>
-              <h3>Chua co hoc sinh nao</h3>
+              <h3>No students found</h3>
             </div>
           `;
         }
@@ -1067,12 +1067,12 @@
             </div>
           </div>
           <div class="list-block">
-            <h3>Lop lien quan</h3>
+            <h3>Related classes</h3>
             ${selected.classNames.map(className => `
               <div class="list-item">
                 <strong>${className}</strong>
               </div>
-            `).join("") || `<div class="list-item muted">Chua co lop lien quan</div>`}
+            `).join("") || `<div class="list-item muted">No related classes</div>`}
           </div>
         `;
       }
@@ -1152,4 +1152,5 @@
     </script>
   </body>
 </html>
+
 
