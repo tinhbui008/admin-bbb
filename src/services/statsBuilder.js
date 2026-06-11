@@ -178,7 +178,8 @@ async function buildParticipantActivity(events, teacherIds = []) {
 
     const existing = participantMap.get(userId);
     if (existing) {
-      if (!existing.name && fallbackName) existing.name = fallbackName;
+      // Update name if we have a real name and current name is just the userId
+      if (fallbackName && existing.name === existing.userId) existing.name = fallbackName;
       if (!existing.role && fallbackRole) existing.role = fallbackRole;
       return existing;
     }
