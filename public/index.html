@@ -99,9 +99,16 @@
         border-radius: 12px;
         display: grid;
         place-items: center;
-        color: white;
-        background: linear-gradient(150deg, var(--brand), var(--brand-2));
-        box-shadow: 0 10px 24px rgba(241, 34, 45, 0.3);
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 10px 24px rgba(241, 34, 45, 0.16);
+      }
+
+      .brand-mark img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
 
       .brand-title {
@@ -797,10 +804,7 @@
         <div class="header-inner">
           <div class="brand">
             <div class="brand-mark">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 10 12 5 2 10l10 5 10-5Z"></path>
-                <path d="M6 12v5c3 2.6 9 2.6 12 0v-5"></path>
-              </svg>
+              <img src="/images/logo.png" alt="Nihaoma logo" />
             </div>
             <div>
               <div class="brand-title">
