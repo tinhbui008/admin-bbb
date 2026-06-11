@@ -1916,9 +1916,12 @@
         });
       }
 
-      document.getElementById("resetButton").addEventListener("click", async () => {
-        await postJson("/api/reset");
-      });
+      const resetBtn = document.getElementById("resetButton");
+      if (resetBtn) {
+        resetBtn.addEventListener("click", async () => {
+          await postJson("/api/reset");
+        });
+      }
 
       loadStats();
       connectRealtime();
