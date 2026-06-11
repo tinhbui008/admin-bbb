@@ -83,7 +83,8 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
        (SELECT COUNT(DISTINCT cs.user_id) FROM class_students cs WHERE cs.class_id = c.class_id) as student_count,
        (SELECT COUNT(DISTINCT m.meeting_id) FROM meetings m WHERE m.class_id = c.class_id) as meeting_count,
        (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as join_events,
-       (SELECT COALESCE(SUM(m.leave_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as leave_events
+       (SELECT COALESCE(SUM(m.leave_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as leave_events,
+       (SELECT MAX(m.ended_at) FROM meetings m WHERE m.class_id = c.class_id) as last_ended_at
      FROM classes c
      ${whereClause}
      ORDER BY c.updated_at DESC
@@ -101,7 +102,8 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
       joinEvents: parseInt(row.join_events, 10),
       leaveEvents: parseInt(row.leave_events, 10),
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
+      lastEndedAt: row.last_ended_at
     })),
     pagination: {
       page,

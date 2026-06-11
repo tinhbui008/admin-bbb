@@ -1346,7 +1346,7 @@
           tableHtml = `
             <table>
               <thead>
-                <tr><th>Class</th><th>Teachers</th><th>Students</th><th>Meetings</th><th>Joins</th><th>Created</th></tr>
+                <tr><th>Class</th><th>Teachers</th><th>Students</th><th>Meetings</th><th>Joins</th><th>Created</th><th>Last Ended</th></tr>
               </thead>
               <tbody>
                 ${data.map(item => `
@@ -1357,6 +1357,7 @@
                     <td>${item.meetingCount}</td>
                     <td>${item.joinEvents}</td>
                     <td class="muted">${formatActivityDateTime(item.createdAt)}</td>
+                    <td class="muted">${item.lastEndedAt ? formatActivityDateTime(item.lastEndedAt) : '<span style="color: #22c55e;">Running</span>'}</td>
                   </tr>
                 `).join("")}
               </tbody>
