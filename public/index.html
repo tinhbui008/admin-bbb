@@ -986,7 +986,7 @@
               <div class="live-grid" id="liveRooms"></div>
             </section>
 
-            <section class="card card-pad">
+            <!-- <section class="card card-pad">
               <div class="section-title" style="margin-bottom: 14px;">
                 <div class="detail-icon" style="width: 28px; height: 28px; border-radius: 8px; background: var(--brand-soft); color: var(--brand);">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1000,7 +1000,7 @@
               </div>
               <div class="analytics-tabs" id="analyticsTabs"></div>
               <div class="chart-surface" id="analyticsContent"></div>
-            </section>
+            </section> -->
 
             <section class="card card-pad">
               <div class="tab-row" id="detailTabs"></div>
@@ -1297,6 +1297,11 @@
       }
 
       function renderAnalyticsTabs() {
+        const analyticsTabs = document.getElementById("analyticsTabs");
+        if (!analyticsTabs) {
+          return;
+        }
+
         const tabs = [
           ["activity", "Activity"],
           ["classes", "Classes"],
@@ -1304,7 +1309,7 @@
           ["students", "Students"]
         ];
 
-        document.getElementById("analyticsTabs").innerHTML = tabs.map(([key, label]) => `
+        analyticsTabs.innerHTML = tabs.map(([key, label]) => `
           <button class="analytics-tab ${state.activeAnalyticsTab === key ? "active" : ""}" data-analytics-tab="${key}">${escapeHtml(label)}</button>
         `).join("");
       }
@@ -1475,6 +1480,11 @@
       }
 
       function renderAnalytics(data) {
+        const analyticsContent = document.getElementById("analyticsContent");
+        if (!analyticsContent) {
+          return;
+        }
+
         renderAnalyticsTabs();
 
         let content = "";
@@ -1500,7 +1510,7 @@
           content = renderActivityLineChart(buildActivitySeries(data));
         }
 
-        document.getElementById("analyticsContent").innerHTML = content;
+        analyticsContent.innerHTML = content;
       }
 
       function renderRankList(targetId, rows, buildRow) {
