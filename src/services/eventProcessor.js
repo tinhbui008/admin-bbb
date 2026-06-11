@@ -27,7 +27,7 @@ const {
 
 async function processWebhookPayload(rawBody, contentType, checksumValid) {
   const parsed = parseIncomingBody(rawBody, contentType);
-  const candidates = extractEventCandidates(parsed.parsedBody, parsed.formFields);
+  const candidates = extractEventCandidates(parsed.parsedBody, parsed.formFields, parsed.parsedBodySourceKey);
   const normalizedEvents = dedupeNormalizedEvents(
     candidates
       .map(candidate => normalizeEvent(candidate, parsed.formFields))

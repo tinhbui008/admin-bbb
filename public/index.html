@@ -568,7 +568,7 @@
             Track learning behavior from BBB webhooks in an easy-to-read way: view overview by tab and drill down into each class, teacher, and student.
           </p>
         </div>
-        <!-- <button class="button" id="resetButton">Reset Data</button> -->
+        <button class="button" id="resetButton">Reset Data</button>
       </div>
 
       <!-- <section class="hero">
@@ -952,7 +952,7 @@
               </tr>
             </thead>
             <tbody>
-              ${data.topTeachers.map(item => `
+              ${data.topTeachers.map(item => `  
                 <tr>
                   <td>
                     <button class="table-link" data-teacher-id="${item.teacherId}">

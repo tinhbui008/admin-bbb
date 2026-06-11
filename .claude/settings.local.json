@@ -11,7 +11,8 @@
       "Bash(git push:*)",
       "Bash(git commit:*)",
       "Bash(node -c:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(dir \"E:\\\\Dev\\\\BBB-Admin-Nihaoma\")"
     ]
   }
 }

@@ -14,19 +14,29 @@ function parseIncomingBody(rawBody, contentType) {
       fields[key] = value;
     }
 
-    const parsedEvent =
-      tryParseJson(fields.event) ??
-      tryParseJson(fields.events) ??
-      tryParseJson(fields.data) ??
-      tryParseJson(rawBody) ??
-      fields.event ??
-      fields.events ??
-      {};
+    // Track which key was used to derive parsedBody so extractEventCandidates
+    // can skip re-parsing it (prevents every event from being processed twice).
+    let parsedBodySourceKey = null;
+    let parsedEvent = null;
+
+    if (tryParseJson(fields.event) !== null) {
+      parsedEvent = tryParseJson(fields.event);
+      parsedBodySourceKey = "event";
+    } else if (tryParseJson(fields.events) !== null) {
+      parsedEvent = tryParseJson(fields.events);
+      parsedBodySourceKey = "events";
+    } else if (tryParseJson(fields.data) !== null) {
+      parsedEvent = tryParseJson(fields.data);
+      parsedBodySourceKey = "data";
+    } else {
+      parsedEvent = tryParseJson(rawBody) ?? fields.event ?? fields.events ?? {};
+    }
 
     return {
       rawBody,
       parsedBody: parsedEvent || {},
-      formFields: fields
+      formFields: fields,
+      parsedBodySourceKey
     };
   }
 
@@ -91,11 +101,14 @@ function collectEventCandidates(value, sink) {
   }
 }
 
-function extractEventCandidates(parsedBody, formFields) {
+function extractEventCandidates(parsedBody, formFields, parsedBodySourceKey = null) {
   const candidates = [];
   collectEventCandidates(parsedBody, candidates);
 
   for (const key of ["event", "events", "data", "message"]) {
+    // Skip the key that was already used to derive parsedBody — re-parsing it
+    // would produce identical candidates and cause every event to be counted twice.
+    if (key === parsedBodySourceKey) continue;
     const parsedValue = tryParseJson(formFields[key]);
     if (parsedValue) {
       collectEventCandidates(parsedValue, candidates);
@@ -303,7 +316,11 @@ function dedupeNormalizedEvents(events) {
   const result = [];
 
   for (const event of events) {
-    const signature = [
+    // Use raw payload JSON as primary dedup key: two candidates extracted from the
+    // same source object are structurally identical, so their JSON is identical.
+    // Fall back to field-based signature for events without a raw payload.
+    const rawStr = event.raw ? JSON.stringify(event.raw) : null;
+    const signature = rawStr || [
       event.eventName,
       event.meetingId,
       event.userId || "",
