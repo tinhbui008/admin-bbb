@@ -61,6 +61,19 @@ async function buildStats(options = {}) {
   const teacherDetails = await buildTeacherDetails();
   const studentDetails = await buildStudentDetails();
 
+  // Build name lookup map from studentDetails for resolving topStudents names
+  const studentNameMap = new Map(studentDetails.map(s => [s.userId, s.userName]));
+
+  // Update topStudents names using resolved names from studentDetails
+  for (const student of topStudents) {
+    const nameIsUserId = student.userName === student.userId ||
+                         student.userName.startsWith('gl-') ||
+                         student.userName.startsWith('w_');
+    if (nameIsUserId && studentNameMap.has(student.userId)) {
+      student.userName = studentNameMap.get(student.userId);
+    }
+  }
+
   // Build chart data for visualizations
   const chartData = await buildChartData(recentEvents, classDetails, teacherDetails, liveRooms, summary);
 
@@ -103,9 +116,10 @@ async function buildClassDetails() {
     }
 
     const relatedEvents = await eventsDb.getEventsByClassId(cls.class_id, 100);
+    const participantsData = await meetingsDb.getParticipantsByClassId(cls.class_id);
     const studentNameMap = new Map((classDetail.students || []).map(s => [s.userId, s.userName]));
     const teacherNameMap = new Map((classDetail.teachers || []).map(t => [t.teacherId, t.teacherName]));
-    const participantActivity = await buildParticipantActivity(relatedEvents, classDetail.teachers.map(t => t.teacherId), studentNameMap, teacherNameMap);
+    const participantActivity = await buildParticipantActivity(relatedEvents, classDetail.teachers.map(t => t.teacherId), studentNameMap, teacherNameMap, participantsData);
 
     details.push({
       classId: classDetail.classId,
@@ -161,9 +175,23 @@ async function buildStudentDetails() {
       limit: 10
     });
 
+    // Try to find real name from events if current name looks like a userId
+    let userName = studentDetail.userName;
+    const nameIsUserId = userName === studentDetail.userId ||
+                         userName.startsWith('gl-') ||
+                         userName.startsWith('w_');
+    if (nameIsUserId && recentEvents.data.length > 0) {
+      for (const event of recentEvents.data) {
+        if (event.userName && !event.userName.startsWith('gl-') && !event.userName.startsWith('w_')) {
+          userName = event.userName;
+          break;
+        }
+      }
+    }
+
     details.push({
       userId: studentDetail.userId,
-      userName: studentDetail.userName,
+      userName,
       classIds: studentDetail.classes.map(c => c.classId),
       classNames: studentDetail.classes.map(c => c.className),
       teacherIds: studentDetail.teachers.map(t => t.teacherId),
@@ -176,8 +204,25 @@ async function buildStudentDetails() {
   return details.sort((a, b) => (b.totals.joins - a.totals.joins) || (b.totals.leaves - a.totals.leaves));
 }
 
-async function buildParticipantActivity(events, teacherIds = [], studentNameMap = new Map(), teacherNameMap = new Map()) {
+async function buildParticipantActivity(events, teacherIds = [], studentNameMap = new Map(), teacherNameMap = new Map(), participantsData = []) {
   const participantMap = new Map();
+
+  // Build a userId -> userName map from events for MODERATOR users (teachers)
+  // This maps the UUID userId to their display name
+  const teacherUserIdMap = new Map();
+  for (const event of events) {
+    if (event.userId && event.userName && event.role === 'MODERATOR' &&
+        !event.userName.startsWith('gl-') && !event.userName.startsWith('w_')) {
+      teacherUserIdMap.set(event.userId, event.userName);
+    }
+  }
+  // Also add from participantsData
+  for (const p of participantsData) {
+    if (p.userId && p.userName && p.role === 'MODERATOR' &&
+        !p.userName.startsWith('gl-') && !p.userName.startsWith('w_')) {
+      teacherUserIdMap.set(p.userId, p.userName);
+    }
+  }
 
   // Helper to lookup name from maps
   const lookupName = (userId, eventUserName) => {
@@ -187,11 +232,65 @@ async function buildParticipantActivity(events, teacherIds = [], studentNameMap 
     if (studentNameMap.has(userId)) {
       return studentNameMap.get(userId);
     }
+    // Check teacher userId map (maps UUID to display name)
+    if (teacherUserIdMap.has(userId)) {
+      return teacherUserIdMap.get(userId);
+    }
     if (teacherNameMap.has(userId)) {
       return teacherNameMap.get(userId);
     }
     return eventUserName || userId;
   };
+
+  // Pre-populate participants from meeting_participants data (has accurate join/left times)
+  // Mark them as having DB data so we don't double-count activity from events
+  for (const p of participantsData) {
+    if (!p.userId) continue;
+    const resolvedName = lookupName(p.userId, p.userName);
+    const joinAtMs = p.joinAt ? new Date(p.joinAt).getTime() : null;
+    const leftAtMs = p.leftAt ? new Date(p.leftAt).getTime() : null;
+
+    const existing = participantMap.get(p.userId);
+    if (existing) {
+      // Update with earliest join and latest left
+      if (joinAtMs && (!existing.joinAt || joinAtMs < existing.joinAt)) {
+        existing.joinAt = joinAtMs;
+      }
+      if (leftAtMs && (!existing.leftAt || leftAtMs > existing.leftAt)) {
+        existing.leftAt = leftAtMs;
+      }
+      // Accumulate times from database
+      existing.durationMs += p.durationMs || 0;
+      existing.talkTimeMs += p.talkTimeMs || 0;
+      existing.webcamTimeMs += p.webcamTimeMs || 0;
+      existing.messages += p.messages || 0;
+      existing.reactions += p.reactions || 0;
+      existing.pollVotes += p.pollVotes || 0;
+      existing.raiseHands += p.raiseHands || 0;
+      existing._hasDbData = true;
+    } else {
+      participantMap.set(p.userId, {
+        userId: p.userId,
+        name: resolvedName,
+        role: p.role || null,
+        joinAt: joinAtMs,
+        leftAt: leftAtMs,
+        durationMs: p.durationMs || 0,
+        activeJoinAt: null,
+        talkTimeMs: p.talkTimeMs || 0,
+        activeTalkAt: null,
+        webcamTimeMs: p.webcamTimeMs || 0,
+        activeWebcamAt: null,
+        messages: p.messages || 0,
+        reactions: p.reactions || 0,
+        pollVotes: p.pollVotes || 0,
+        raiseHands: p.raiseHands || 0,
+        talkEvents: 0,
+        webcamEvents: 0,
+        _hasDbData: true  // Mark as pre-populated from DB
+      });
+    }
+  }
 
   const ensureParticipant = (userId, fallbackName = null, fallbackRole = null) => {
     if (!userId) return null;
@@ -256,47 +355,54 @@ async function buildParticipantActivity(events, teacherIds = [], studentNameMap 
 
     const timestampMs = toTimestampMs(event.timestamp);
 
+    // Always update join/left times from events (use earliest join, latest left)
     if (isJoinEvent(event.eventName) && timestampMs) {
       participant.joinAt = participant.joinAt ? Math.min(participant.joinAt, timestampMs) : timestampMs;
-      participant.activeJoinAt = timestampMs;
+      if (!participant._hasDbData) {
+        participant.activeJoinAt = timestampMs;
+      }
     }
 
     if (isLeaveEvent(event.eventName) && timestampMs) {
       participant.leftAt = participant.leftAt ? Math.max(participant.leftAt, timestampMs) : timestampMs;
-      if (participant.activeJoinAt) {
+      // Only calculate duration from events if not pre-populated from DB
+      if (!participant._hasDbData && participant.activeJoinAt) {
         participant.durationMs += Math.max(0, timestampMs - participant.activeJoinAt);
         participant.activeJoinAt = null;
       }
     }
 
-    if (isMessageEvent(event.eventName)) participant.messages += 1;
-    if (isReactionEvent(event.eventName)) participant.reactions += 1;
-    if (isPollVoteEvent(event.eventName)) participant.pollVotes += 1;
-    if (isRaiseHandEvent(event.eventName)) participant.raiseHands += 1;
+    // Only count activity from events if NOT pre-populated from DB (to avoid double-counting)
+    if (!participant._hasDbData) {
+      if (isMessageEvent(event.eventName)) participant.messages += 1;
+      if (isReactionEvent(event.eventName)) participant.reactions += 1;
+      if (isPollVoteEvent(event.eventName)) participant.pollVotes += 1;
+      if (isRaiseHandEvent(event.eventName)) participant.raiseHands += 1;
 
-    if (isTalkStartEvent(event.eventName) && timestampMs) {
-      participant.talkEvents += 1;
-      if (!participant.activeTalkAt) participant.activeTalkAt = timestampMs;
-    }
-
-    if (isTalkStopEvent(event.eventName) && timestampMs) {
-      participant.talkEvents += 1;
-      if (participant.activeTalkAt) {
-        participant.talkTimeMs += Math.max(0, timestampMs - participant.activeTalkAt);
-        participant.activeTalkAt = null;
+      if (isTalkStartEvent(event.eventName) && timestampMs) {
+        participant.talkEvents += 1;
+        if (!participant.activeTalkAt) participant.activeTalkAt = timestampMs;
       }
-    }
 
-    if (isWebcamStartEvent(event.eventName) && timestampMs) {
-      participant.webcamEvents += 1;
-      if (!participant.activeWebcamAt) participant.activeWebcamAt = timestampMs;
-    }
+      if (isTalkStopEvent(event.eventName) && timestampMs) {
+        participant.talkEvents += 1;
+        if (participant.activeTalkAt) {
+          participant.talkTimeMs += Math.max(0, timestampMs - participant.activeTalkAt);
+          participant.activeTalkAt = null;
+        }
+      }
 
-    if (isWebcamStopEvent(event.eventName) && timestampMs) {
-      participant.webcamEvents += 1;
-      if (participant.activeWebcamAt) {
-        participant.webcamTimeMs += Math.max(0, timestampMs - participant.activeWebcamAt);
-        participant.activeWebcamAt = null;
+      if (isWebcamStartEvent(event.eventName) && timestampMs) {
+        participant.webcamEvents += 1;
+        if (!participant.activeWebcamAt) participant.activeWebcamAt = timestampMs;
+      }
+
+      if (isWebcamStopEvent(event.eventName) && timestampMs) {
+        participant.webcamEvents += 1;
+        if (participant.activeWebcamAt) {
+          participant.webcamTimeMs += Math.max(0, timestampMs - participant.activeWebcamAt);
+          participant.activeWebcamAt = null;
+        }
       }
     }
   }
@@ -529,7 +635,7 @@ function buildTeacherWorkload(teacherDetails) {
   for (const teacher of teacherDetails || []) {
     if (teacher.totals && teacher.totals.classes > 0) {
       workload.push({
-        name: teacher.teacherId,
+        name: teacher.teacherName || teacher.teacherId,
         classes: teacher.totals.classes,
         students: teacher.totals.students || 0
       });

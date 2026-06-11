@@ -239,6 +239,33 @@ async function addParticipantWebcamTime(meetingId, userId, durationMs) {
   );
 }
 
+async function getParticipantsByClassId(classId) {
+  const result = await db.query(
+    `SELECT mp.*, m.meeting_name
+     FROM meeting_participants mp
+     JOIN meetings m ON m.meeting_id = mp.meeting_id
+     WHERE m.class_id = $1
+     ORDER BY mp.join_at ASC`,
+    [classId]
+  );
+  return result.rows.map(p => ({
+    meetingId: p.meeting_id,
+    meetingName: p.meeting_name,
+    userId: p.user_id,
+    userName: p.user_name,
+    role: p.role,
+    joinAt: p.join_at,
+    leftAt: p.left_at,
+    durationMs: p.duration_ms,
+    talkTimeMs: p.talk_time_ms,
+    webcamTimeMs: p.webcam_time_ms,
+    messages: p.messages,
+    reactions: p.reactions,
+    pollVotes: p.poll_votes,
+    raiseHands: p.raise_hands
+  }));
+}
+
 async function getTopMeetings(limit = 10) {
   const result = await db.query(
     `SELECT m.*,
@@ -274,5 +301,6 @@ module.exports = {
   incrementParticipantActivity,
   addParticipantTalkTime,
   addParticipantWebcamTime,
+  getParticipantsByClassId,
   getTopMeetings
 };
