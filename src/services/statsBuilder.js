@@ -61,6 +61,9 @@ async function buildStats(options = {}) {
   const teacherDetails = await buildTeacherDetails();
   const studentDetails = await buildStudentDetails();
 
+  // Build chart data for visualizations
+  const chartData = await buildChartData(recentEvents, classDetails, teacherDetails, liveRooms, summary);
+
   return {
     totals,
     summary,
@@ -81,6 +84,7 @@ async function buildStats(options = {}) {
     classDetails,
     teacherDetails,
     studentDetails,
+    chartData,
     recentEvents: recentEvents.filter(e => e.eventName !== "unknown" || e.meetingId !== "unknown-meeting")
   };
 }
@@ -328,10 +332,221 @@ async function buildParticipantActivity(events, teacherIds = []) {
     });
 }
 
+/**
+ * Build chart data for dashboard visualizations
+ */
+async function buildChartData(recentEvents, classDetails, teacherDetails, liveRooms, summary) {
+  // 1. Meeting Activity Timeline (last 7 days)
+  const meetingActivityByDay = buildMeetingActivityByDay(recentEvents);
+
+  // 2. Peak Usage Hours (24 hours distribution)
+  const peakUsageHours = buildPeakUsageHours(recentEvents);
+
+  // 3. Class Duration Trend
+  const classDurationTrend = buildClassDurationTrend(classDetails);
+
+  // 4. Participant Distribution (Teachers vs Students)
+  const participantDistribution = {
+    teachers: summary.uniqueTeachers || 0,
+    students: summary.uniqueUsers || 0
+  };
+
+  // 5. Class Status (Live vs Ended)
+  const liveCount = (liveRooms || []).length;
+  const endedCount = (classDetails || []).filter(c =>
+    c.meetings && c.meetings.some(m => m.endedAt)
+  ).length;
+  const classStatus = {
+    live: liveCount,
+    ended: endedCount
+  };
+
+  // 6. Event Type Breakdown
+  const eventTypeBreakdown = buildEventTypeBreakdown(recentEvents);
+
+  // 7. Teacher Workload
+  const teacherWorkload = buildTeacherWorkload(teacherDetails);
+
+  // 8. Activity Score Distribution
+  const activityDistribution = buildActivityDistribution(classDetails);
+
+  return {
+    meetingActivityByDay,
+    peakUsageHours,
+    classDurationTrend,
+    participantDistribution,
+    classStatus,
+    eventTypeBreakdown,
+    teacherWorkload,
+    activityDistribution
+  };
+}
+
+function buildMeetingActivityByDay(events) {
+  const dayMap = new Map();
+  const now = new Date();
+
+  // Initialize last 7 days
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    const key = date.toISOString().split('T')[0];
+    dayMap.set(key, { meetings: 0, joins: 0, leaves: 0 });
+  }
+
+  for (const event of events) {
+    if (!event.timestamp) continue;
+    const date = new Date(event.timestamp);
+    const key = date.toISOString().split('T')[0];
+
+    if (!dayMap.has(key)) continue;
+
+    const entry = dayMap.get(key);
+    if (event.eventName === 'meeting-created') {
+      entry.meetings++;
+    } else if (isJoinEvent(event.eventName)) {
+      entry.joins++;
+    } else if (isLeaveEvent(event.eventName)) {
+      entry.leaves++;
+    }
+  }
+
+  const labels = [];
+  const meetings = [];
+  const joins = [];
+  const leaves = [];
+
+  for (const [date, data] of dayMap) {
+    labels.push(date);
+    meetings.push(data.meetings);
+    joins.push(data.joins);
+    leaves.push(data.leaves);
+  }
+
+  return { labels, meetings, joins, leaves };
+}
+
+function buildPeakUsageHours(events) {
+  const hourCounts = new Array(24).fill(0);
+
+  for (const event of events) {
+    if (!event.timestamp || !isJoinEvent(event.eventName)) continue;
+    const date = new Date(event.timestamp);
+    const hour = date.getHours();
+    hourCounts[hour]++;
+  }
+
+  const labels = [];
+  for (let i = 0; i < 24; i++) {
+    labels.push(`${i.toString().padStart(2, '0')}:00`);
+  }
+
+  return { labels, counts: hourCounts };
+}
+
+function buildClassDurationTrend(classDetails) {
+  const dayMap = new Map();
+
+  for (const cls of classDetails || []) {
+    for (const meeting of cls.meetings || []) {
+      if (!meeting.startedAt || !meeting.endedAt) continue;
+
+      const startDate = new Date(meeting.startedAt);
+      const endDate = new Date(meeting.endedAt);
+      const durationMinutes = Math.round((endDate - startDate) / 60000);
+
+      if (durationMinutes <= 0 || durationMinutes > 480) continue; // Skip invalid durations
+
+      const key = startDate.toISOString().split('T')[0];
+
+      if (!dayMap.has(key)) {
+        dayMap.set(key, { total: 0, count: 0 });
+      }
+
+      const entry = dayMap.get(key);
+      entry.total += durationMinutes;
+      entry.count++;
+    }
+  }
+
+  const sorted = Array.from(dayMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  const labels = sorted.map(([date]) => date);
+  const avgDurations = sorted.map(([, data]) =>
+    data.count > 0 ? Math.round(data.total / data.count) : 0
+  );
+
+  return { labels, avgDurations };
+}
+
+function buildEventTypeBreakdown(events) {
+  const counts = {
+    joins: 0,
+    leaves: 0,
+    messages: 0,
+    reactions: 0,
+    pollVotes: 0,
+    raiseHands: 0
+  };
+
+  for (const event of events) {
+    if (isJoinEvent(event.eventName)) counts.joins++;
+    else if (isLeaveEvent(event.eventName)) counts.leaves++;
+    else if (isMessageEvent(event.eventName)) counts.messages++;
+    else if (isReactionEvent(event.eventName)) counts.reactions++;
+    else if (isPollVoteEvent(event.eventName)) counts.pollVotes++;
+    else if (isRaiseHandEvent(event.eventName)) counts.raiseHands++;
+  }
+
+  return counts;
+}
+
+function buildTeacherWorkload(teacherDetails) {
+  const workload = [];
+
+  for (const teacher of teacherDetails || []) {
+    if (teacher.totals && teacher.totals.classes > 0) {
+      workload.push({
+        name: teacher.teacherId,
+        classes: teacher.totals.classes,
+        students: teacher.totals.students || 0
+      });
+    }
+  }
+
+  // Sort by classes descending, take top 10
+  workload.sort((a, b) => b.classes - a.classes);
+  return workload.slice(0, 10);
+}
+
+function buildActivityDistribution(classDetails) {
+  let totalMessages = 0;
+  let totalTalkEvents = 0;
+  let totalWebcamEvents = 0;
+  let totalReactions = 0;
+
+  for (const cls of classDetails || []) {
+    for (const participant of cls.participantActivity || []) {
+      totalMessages += participant.messages || 0;
+      totalReactions += participant.reactions || 0;
+      // Count talk/webcam time as activity indicators
+      if (participant.talkTime && participant.talkTime !== '-') totalTalkEvents++;
+      if (participant.webcamTime && participant.webcamTime !== '-') totalWebcamEvents++;
+    }
+  }
+
+  return {
+    messages: totalMessages,
+    talkEvents: totalTalkEvents,
+    webcamEvents: totalWebcamEvents,
+    reactions: totalReactions
+  };
+}
+
 module.exports = {
   buildStats,
   buildClassDetails,
   buildTeacherDetails,
   buildStudentDetails,
-  buildParticipantActivity
+  buildParticipantActivity,
+  buildChartData
 };
