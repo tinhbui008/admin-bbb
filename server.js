@@ -41,6 +41,56 @@ function sendFile(res, filePath, contentType) {
   });
 }
 
+function getContentType(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  switch (ext) {
+    case ".html":
+      return "text/html; charset=utf-8";
+    case ".css":
+      return "text/css; charset=utf-8";
+    case ".js":
+      return "application/javascript; charset=utf-8";
+    case ".json":
+      return "application/json; charset=utf-8";
+    case ".svg":
+      return "image/svg+xml";
+    case ".png":
+      return "image/png";
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
+    case ".webp":
+      return "image/webp";
+    case ".gif":
+      return "image/gif";
+    case ".ico":
+      return "image/x-icon";
+    default:
+      return "application/octet-stream";
+  }
+}
+
+function tryServeStatic(req, res, pathname) {
+  if (req.method !== "GET" || pathname === "/") {
+    return false;
+  }
+
+  const relativePath = decodeURIComponent(pathname).replace(/^\/+/, "");
+  const absolutePath = path.resolve(CONFIG.publicDir, relativePath);
+  const publicRoot = path.resolve(CONFIG.publicDir) + path.sep;
+
+  if (!absolutePath.startsWith(publicRoot) && absolutePath !== path.resolve(CONFIG.publicDir)) {
+    return false;
+  }
+
+  if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
+    return false;
+  }
+
+  sendFile(res, absolutePath, getContentType(absolutePath));
+  return true;
+}
+
 function getRawBody(req) {
   return new Promise((resolve, reject) => {
     let raw = "";
@@ -190,6 +240,10 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && parsedUrl.pathname === "/") {
     sendFile(res, path.join(CONFIG.publicDir, "index.html"), "text/html; charset=utf-8");
+    return;
+  }
+
+  if (tryServeStatic(req, res, parsedUrl.pathname)) {
     return;
   }
 
