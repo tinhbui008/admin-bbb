@@ -1158,12 +1158,14 @@
           </div>
           <div class="list-block">
             <h3>Teachers</h3>
-            ${(selected.teachers || []).map(item => `
+            ${(selected.teachers || []).map(item => {
+              const teacherMeetings = (selected.meetings || []).filter(m => m.teacherId === item.teacherId).length;
+              return `
               <div class="list-item">
-                <strong>${item.teacherId || "-"}</strong>
-                <div class="muted">${item.meetings} meetings in this class</div>
+                <strong>${item.teacherName || item.teacherId || "-"}</strong>
+                <div class="muted">${teacherMeetings} meeting${teacherMeetings !== 1 ? 's' : ''} in this class</div>
               </div>
-            `).join("") || `<div class="list-item muted">No teachers</div>`}
+            `;}).join("") || `<div class="list-item muted">No teachers</div>`}
           </div>
           <div class="list-block">
             <h3>Top students</h3>

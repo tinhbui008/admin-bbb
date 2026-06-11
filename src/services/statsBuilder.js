@@ -103,7 +103,9 @@ async function buildClassDetails() {
     }
 
     const relatedEvents = await eventsDb.getEventsByClassId(cls.class_id, 100);
-    const participantActivity = await buildParticipantActivity(relatedEvents, classDetail.teachers.map(t => t.teacherId));
+    const studentNameMap = new Map((classDetail.students || []).map(s => [s.userId, s.userName]));
+    const teacherNameMap = new Map((classDetail.teachers || []).map(t => [t.teacherId, t.teacherName]));
+    const participantActivity = await buildParticipantActivity(relatedEvents, classDetail.teachers.map(t => t.teacherId), studentNameMap, teacherNameMap);
 
     details.push({
       classId: classDetail.classId,
@@ -174,23 +176,44 @@ async function buildStudentDetails() {
   return details.sort((a, b) => (b.totals.joins - a.totals.joins) || (b.totals.leaves - a.totals.leaves));
 }
 
-async function buildParticipantActivity(events, teacherIds = []) {
+async function buildParticipantActivity(events, teacherIds = [], studentNameMap = new Map(), teacherNameMap = new Map()) {
   const participantMap = new Map();
+
+  // Helper to lookup name from maps
+  const lookupName = (userId, eventUserName) => {
+    if (eventUserName && !eventUserName.startsWith('gl-') && !eventUserName.startsWith('w_')) {
+      return eventUserName;
+    }
+    if (studentNameMap.has(userId)) {
+      return studentNameMap.get(userId);
+    }
+    if (teacherNameMap.has(userId)) {
+      return teacherNameMap.get(userId);
+    }
+    return eventUserName || userId;
+  };
 
   const ensureParticipant = (userId, fallbackName = null, fallbackRole = null) => {
     if (!userId) return null;
 
+    const resolvedName = lookupName(userId, fallbackName);
+
     const existing = participantMap.get(userId);
     if (existing) {
-      // Update name if we have a real name and current name is just the userId
-      if (fallbackName && existing.name === existing.userId) existing.name = fallbackName;
+      // Update name if we have a real name and current name looks like a userId
+      const nameIsUserId = existing.name === existing.userId ||
+                           existing.name.startsWith('gl-') ||
+                           existing.name.startsWith('w_');
+      if (resolvedName && nameIsUserId && !resolvedName.startsWith('gl-') && !resolvedName.startsWith('w_')) {
+        existing.name = resolvedName;
+      }
       if (!existing.role && fallbackRole) existing.role = fallbackRole;
       return existing;
     }
 
     const participant = {
       userId,
-      name: fallbackName || userId,
+      name: resolvedName,
       role: fallbackRole || null,
       joinAt: null,
       leftAt: null,
