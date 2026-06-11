@@ -72,6 +72,12 @@ async function searchMeetings({ classId, teacherId, from, to, page = 1, limit = 
   const params = [];
   let paramIndex = 1;
 
+  // Filter out orphan meetings with no activity
+  conditions.push(`(
+    join_events > 0
+    OR (SELECT COUNT(*) FROM meeting_participants mp WHERE mp.meeting_id = m.meeting_id) > 0
+  )`);
+
   if (classId) {
     conditions.push(`class_id = $${paramIndex++}`);
     params.push(classId);
@@ -93,7 +99,7 @@ async function searchMeetings({ classId, teacherId, from, to, page = 1, limit = 
   const offset = (page - 1) * limit;
 
   const countResult = await db.query(
-    `SELECT COUNT(*) as total FROM meetings ${whereClause}`,
+    `SELECT COUNT(*) as total FROM meetings m ${whereClause}`,
     params
   );
   const total = parseInt(countResult.rows[0].total, 10);

@@ -42,6 +42,12 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
   const params = [];
   let paramIndex = 1;
 
+  // Filter out orphan classes with no activity
+  conditions.push(`(
+    (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) > 0
+    OR (SELECT COUNT(DISTINCT cs.user_id) FROM class_students cs WHERE cs.class_id = c.class_id) > 0
+  )`);
+
   if (search) {
     conditions.push(`(c.class_id ILIKE $${paramIndex} OR c.class_name ILIKE $${paramIndex})`);
     params.push(`%${search}%`);
