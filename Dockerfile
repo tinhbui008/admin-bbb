@@ -18,4 +18,4 @@ USER node
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["sh", "-c", "node src/db/migrate.js && node server.js"]

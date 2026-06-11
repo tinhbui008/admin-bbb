@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const db = require("../index");
 
 function normalizeTimestamp(value) {
@@ -28,11 +29,15 @@ function normalizeTimestamp(value) {
 }
 
 async function insertEvent(event) {
+  const rawPayloadStr = JSON.stringify(event.raw || {});
+  const rawPayloadHash = crypto.createHash("md5").update(rawPayloadStr).digest("hex");
+
   const result = await db.query(
     `INSERT INTO events (
       event_name, meeting_id, user_id, user_name, class_id, teacher_id,
-      meeting_name, role, timestamp, checksum_valid, raw_payload
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      meeting_name, role, timestamp, checksum_valid, raw_payload, raw_payload_hash
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    ON CONFLICT (raw_payload_hash) DO NOTHING
     RETURNING id`,
     [
       event.eventName,
@@ -45,10 +50,12 @@ async function insertEvent(event) {
       event.role,
       normalizeTimestamp(event.timestamp),
       event.checksumValid !== false,
-      JSON.stringify(event.raw || {})
+      rawPayloadStr,
+      rawPayloadHash
     ]
   );
-  return result.rows[0];
+  // null = duplicate payload, caller should skip counter increments
+  return result.rows[0] || null;
 }
 
 async function getRecentEvents(limit = 100) {

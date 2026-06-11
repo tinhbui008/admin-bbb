@@ -50,6 +50,16 @@ async function processWebhookPayload(rawBody, contentType, checksumValid) {
 }
 
 async function processEvent(normalized, checksumValid) {
+  const inserted = await eventsDb.insertEvent({
+    ...normalized,
+    checksumValid
+  });
+
+  // Duplicate payload — already processed this exact event, skip all counters.
+  if (!inserted) {
+    return { eventName: normalized.eventName, processed: false, duplicate: true };
+  }
+
   await statsDb.incrementStat("events");
 
   if (checksumValid) {
@@ -57,11 +67,6 @@ async function processEvent(normalized, checksumValid) {
   } else {
     await statsDb.incrementStat("checksum_rejected");
   }
-
-  await eventsDb.insertEvent({
-    ...normalized,
-    checksumValid
-  });
 
   if (normalized.classId && normalized.classId !== "unmapped") {
     await classesDb.upsertClass(normalized.classId, normalized.meetingName);
