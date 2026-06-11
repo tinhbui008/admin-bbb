@@ -68,19 +68,20 @@ async function getSummary() {
 
 async function getTopClasses(limit = 10) {
   const result = await db.query(
-    `SELECT c.class_id, c.class_name,
+    `SELECT c.class_id, c.class_name, c.created_at,
        (SELECT COUNT(DISTINCT m.meeting_id) FROM meetings m WHERE m.class_id = c.class_id) as meetings,
        (SELECT COUNT(DISTINCT ct.teacher_id) FROM class_teachers ct WHERE ct.class_id = c.class_id) as teachers,
        (SELECT COUNT(DISTINCT cs.user_id) FROM class_students cs WHERE cs.class_id = c.class_id) as students,
        (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as join_events,
-       (SELECT COALESCE(SUM(m.leave_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as leave_events
+       (SELECT COALESCE(SUM(m.leave_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as leave_events,
+       (SELECT MAX(m.ended_at) FROM meetings m WHERE m.class_id = c.class_id) as last_ended_at
      FROM classes c
      WHERE c.class_id != 'unmapped'
        AND (
          (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) > 0
          OR (SELECT COUNT(DISTINCT cs.user_id) FROM class_students cs WHERE cs.class_id = c.class_id) > 0
        )
-     ORDER BY join_events DESC
+     ORDER BY c.created_at DESC
      LIMIT $1`,
     [limit]
   );
@@ -91,7 +92,9 @@ async function getTopClasses(limit = 10) {
     teachers: parseInt(row.teachers, 10),
     students: parseInt(row.students, 10),
     joinEvents: parseInt(row.join_events, 10),
-    leaveEvents: parseInt(row.leave_events, 10)
+    leaveEvents: parseInt(row.leave_events, 10),
+    createdAt: row.created_at,
+    lastEndedAt: row.last_ended_at
   }));
 }
 

@@ -580,6 +580,29 @@
         return value ?? 0;
       }
 
+      function formatDateTime(value) {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return "-";
+        return date.toLocaleString("vi-VN", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+
+      function formatTime(value) {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return "-";
+        return date.toLocaleTimeString("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+
       function getMeetingNameById(data, meetingId) {
         if (!meetingId) {
           return "-";
@@ -728,6 +751,7 @@
             <thead>
               <tr>
                 <th>Class</th>
+                <th>Created</th>
                 <th>Teacher</th>
                 <th>Student</th>
                 <th>Join</th>
@@ -742,6 +766,7 @@
                       ${item.className || item.classId || "-"}
                     </button>
                   </td>
+                  <td style="white-space: nowrap; font-size: 12px;">${formatDateTime(item.createdAt)}</td>
                   <td>${item.teachers}</td>
                   <td>${item.students}</td>
                   <td>${item.joinEvents}</td>
@@ -749,7 +774,7 @@
                 </tr>
               `).join("") || `
                 <tr>
-                  <td colspan="5" class="muted">No class data available</td>
+                  <td colspan="6" class="muted">No class data available</td>
                 </tr>
               `}
             </tbody>
@@ -1222,7 +1247,7 @@
           tableHtml = `
             <table>
               <thead>
-                <tr><th>Meeting</th><th>Class</th><th>Teacher</th><th>Participants</th><th>Joins</th><th>Started</th></tr>
+                <tr><th>Meeting</th><th>Class</th><th>Teacher</th><th>Participants</th><th>Joins</th><th>Started</th><th>Ended</th></tr>
               </thead>
               <tbody>
                 ${data.map(item => `
@@ -1233,6 +1258,7 @@
                     <td>${item.participantCount}</td>
                     <td>${item.joinEvents}</td>
                     <td class="muted">${formatActivityDateTime(item.startedAt)}</td>
+                    <td class="muted">${item.endedAt ? formatActivityDateTime(item.endedAt) : '<span style="color: #22c55e;">Running</span>'}</td>
                   </tr>
                 `).join("")}
               </tbody>
