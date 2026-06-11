@@ -315,6 +315,201 @@
         gap: 12px;
       }
 
+      .analytics-tabs {
+        display: flex;
+        gap: 7px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        margin-bottom: 16px;
+      }
+
+      .analytics-tab {
+        border: 1px solid var(--border);
+        background: var(--card-2);
+        color: var(--text-2);
+        border-radius: 999px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .analytics-tab.active {
+        color: white;
+        border-color: transparent;
+        background: linear-gradient(150deg, var(--brand), var(--brand-2));
+      }
+
+      .chart-note {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        color: var(--text-2);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .chart-swatch {
+        width: 18px;
+        height: 3px;
+        border-radius: 3px;
+        background: var(--brand);
+      }
+
+      .chart-surface {
+        min-height: 250px;
+      }
+
+      .chart-svg {
+        width: 100%;
+        height: 250px;
+        overflow: visible;
+        display: block;
+      }
+
+      .chart-bars {
+        height: 250px;
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        padding-top: 10px;
+        border-bottom: 1px solid var(--border);
+        background-image: repeating-linear-gradient(to top, transparent, transparent 49px, var(--grid) 49px, var(--grid) 50px);
+      }
+
+      .chart-bar-col {
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+      }
+
+      .chart-bar {
+        width: 100%;
+        max-width: 34px;
+        border-radius: 6px 6px 0 0;
+        opacity: 0.92;
+      }
+
+      .chart-bar-label {
+        color: var(--text-3);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .chart-hbars {
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+        padding: 6px 2px;
+      }
+
+      .chart-hbar-track {
+        height: 9px;
+        border-radius: 6px;
+        background: var(--card-2);
+        overflow: hidden;
+      }
+
+      .chart-hbar-fill {
+        height: 100%;
+        border-radius: 6px;
+      }
+
+      .chart-hbar-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        gap: 12px;
+      }
+
+      .chart-hbar-head strong {
+        font-size: 12.5px;
+        font-weight: 700;
+      }
+
+      .chart-hbar-head span {
+        color: var(--text-3);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .chart-donut-wrap {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        padding: 14px 6px 6px;
+      }
+
+      .chart-donut {
+        position: relative;
+        width: 184px;
+        height: 184px;
+        flex-shrink: 0;
+        border-radius: 50%;
+      }
+
+      .chart-donut-hole {
+        position: absolute;
+        inset: 26px;
+        border-radius: 50%;
+        background: var(--card);
+        display: grid;
+        place-items: center;
+        box-shadow: inset 0 0 0 1px var(--border);
+      }
+
+      .chart-donut-total strong {
+        display: block;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        text-align: center;
+      }
+
+      .chart-donut-total span {
+        color: var(--text-3);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .chart-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex: 1;
+      }
+
+      .chart-legend-row {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+      }
+
+      .chart-legend-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+
+      .chart-legend-row strong {
+        flex: 1;
+        font-size: 13px;
+      }
+
+      .chart-legend-row span {
+        font-size: 12px;
+        font-weight: 700;
+      }
+
       .live-room {
         padding: 14px 15px;
         border-radius: 12px;
@@ -704,6 +899,11 @@
         .live-grid {
           grid-template-columns: 1fr;
         }
+
+        .chart-donut-wrap {
+          flex-direction: column;
+          align-items: flex-start;
+        }
       }
 
       @media (max-width: 1080px) {
@@ -787,6 +987,22 @@
             </section>
 
             <section class="card card-pad">
+              <div class="section-title" style="margin-bottom: 14px;">
+                <div class="detail-icon" style="width: 28px; height: 28px; border-radius: 8px; background: var(--brand-soft); color: var(--brand);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3v18h18"></path>
+                    <path d="M7 16v-5"></path>
+                    <path d="M12 16V8"></path>
+                    <path d="M17 16v-3"></path>
+                  </svg>
+                </div>
+                <h2>Analytics</h2>
+              </div>
+              <div class="analytics-tabs" id="analyticsTabs"></div>
+              <div class="chart-surface" id="analyticsContent"></div>
+            </section>
+
+            <section class="card card-pad">
               <div class="tab-row" id="detailTabs"></div>
               <div id="detailContent"></div>
             </section>
@@ -858,6 +1074,7 @@
 
       const state = {
         stats: null,
+        activeAnalyticsTab: "activity",
         activeDetailTab: "class",
         activeHistoryTab: "classes",
         selectedClassId: null,
@@ -1055,6 +1272,204 @@
             </div>
           `;
         }).join("");
+      }
+
+      function renderAnalyticsTabs() {
+        const tabs = [
+          ["activity", "Activity"],
+          ["classes", "Classes"],
+          ["teachers", "Teachers"],
+          ["students", "Students"]
+        ];
+
+        document.getElementById("analyticsTabs").innerHTML = tabs.map(([key, label]) => `
+          <button class="analytics-tab ${state.activeAnalyticsTab === key ? "active" : ""}" data-analytics-tab="${key}">${escapeHtml(label)}</button>
+        `).join("");
+      }
+
+      function buildActivitySeries(data) {
+        const events = (data.recentEvents || [])
+          .filter(item => item.timestamp)
+          .slice()
+          .sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
+
+        if (!events.length) {
+          return [];
+        }
+
+        const buckets = new Map();
+        for (const event of events) {
+          const label = new Date(Number(event.timestamp)).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+          buckets.set(label, (buckets.get(label) || 0) + 1);
+        }
+
+        return Array.from(buckets.entries()).slice(-10).map(([label, value]) => ({ label, value }));
+      }
+
+      function renderActivityLineChart(series) {
+        if (!series.length) {
+          return '<div class="empty">No event activity yet.</div>';
+        }
+
+        const width = 760;
+        const height = 250;
+        const paddingX = 16;
+        const paddingTop = 16;
+        const paddingBottom = 30;
+        const maxValue = Math.max(...series.map(item => item.value), 1);
+        const innerWidth = width - paddingX * 2;
+        const innerHeight = height - paddingTop - paddingBottom;
+        const step = series.length > 1 ? innerWidth / (series.length - 1) : 0;
+
+        const points = series.map((item, index) => {
+          const x = paddingX + (step * index);
+          const y = paddingTop + innerHeight - ((item.value / maxValue) * innerHeight);
+          return { ...item, x, y };
+        });
+
+        const pointString = points.map(item => `${item.x},${item.y}`).join(" ");
+        const areaPath = `M ${points[0].x} ${height - paddingBottom} L ${points.map(item => `${item.x} ${item.y}`).join(" L ")} L ${points[points.length - 1].x} ${height - paddingBottom} Z`;
+        const grid = Array.from({ length: 5 }, (_, index) => paddingTop + (innerHeight / 4) * index);
+
+        return `
+          <div class="chart-note"><span class="chart-swatch"></span>Events over recent activity window</div>
+          <svg class="chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="chartArea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--brand)" stop-opacity="0.18"></stop>
+                <stop offset="100%" stop-color="var(--brand)" stop-opacity="0"></stop>
+              </linearGradient>
+            </defs>
+            ${grid.map(y => `<line x1="0" x2="${width}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"></line>`).join("")}
+            <path d="${areaPath}" fill="url(#chartArea)"></path>
+            <polyline points="${pointString}" fill="none" stroke="var(--brand)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+            ${points.map(item => `<circle cx="${item.x}" cy="${item.y}" r="3" fill="white" stroke="var(--brand)" stroke-width="2"></circle>`).join("")}
+            ${points.map(item => `<text x="${item.x}" y="${height - 8}" text-anchor="middle" fill="var(--text-3)" font-size="9">${escapeHtml(item.label)}</text>`).join("")}
+          </svg>
+        `;
+      }
+
+      function renderVerticalBarChart(rows, unitLabel) {
+        if (!rows.length) {
+          return '<div class="empty">No ranking data yet.</div>';
+        }
+
+        const maxValue = Math.max(...rows.map(item => item.value), 1);
+        return `
+          <div class="chart-bars">
+            ${rows.map((item, index) => {
+              const [color] = roomColor(index);
+              const pct = Math.max(6, Math.round((item.value / maxValue) * 100));
+              return `
+                <div class="chart-bar-col">
+                  <div class="chart-bar" title="${escapeHtml(String(item.value))}" style="height:${pct}%; background:${color};"></div>
+                  <span class="chart-bar-label">${escapeHtml(item.label)}</span>
+                </div>
+              `;
+            }).join("")}
+          </div>
+          <div class="section-note" style="text-align:right; margin-top:8px;">${escapeHtml(unitLabel)}</div>
+        `;
+      }
+
+      function renderHorizontalBarChart(rows) {
+        if (!rows.length) {
+          return '<div class="empty">No comparison data yet.</div>';
+        }
+
+        const maxValue = Math.max(...rows.map(item => item.value), 1);
+        return `
+          <div class="chart-hbars">
+            ${rows.map((item, index) => {
+              const [color] = roomColor(index);
+              const pct = Math.max(6, Math.round((item.value / maxValue) * 100));
+              return `
+                <div>
+                  <div class="chart-hbar-head">
+                    <strong class="mono ellipsis">${escapeHtml(item.label)}</strong>
+                    <span>${formatNumber(item.value)}</span>
+                  </div>
+                  <div class="chart-hbar-track">
+                    <div class="chart-hbar-fill" style="width:${pct}%; background:${color};"></div>
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        `;
+      }
+
+      function renderDonutChart(rows) {
+        if (!rows.length) {
+          return '<div class="empty">No student distribution yet.</div>';
+        }
+
+        const total = rows.reduce((sum, item) => sum + item.value, 0);
+        let offset = 0;
+        const segments = rows.map((item, index) => {
+          const [color] = roomColor(index);
+          const pct = total ? (item.value / total) * 100 : 0;
+          const start = offset;
+          offset += pct;
+          return { ...item, color, pct, start };
+        });
+
+        const gradient = `conic-gradient(${segments.map(item => `${item.color} ${item.start}% ${item.start + item.pct}%`).join(", ")})`;
+
+        return `
+          <div class="chart-donut-wrap">
+            <div class="chart-donut" style="background:${gradient};">
+              <div class="chart-donut-hole">
+                <div class="chart-donut-total">
+                  <strong>${formatNumber(total)}</strong>
+                  <span>joins</span>
+                </div>
+              </div>
+            </div>
+            <div class="chart-legend">
+              ${segments.map(item => `
+                <div class="chart-legend-row">
+                  <span class="chart-legend-dot" style="background:${item.color};"></span>
+                  <strong class="ellipsis">${escapeHtml(item.label)}</strong>
+                  <span>${formatNumber(item.value)}</span>
+                  <span class="muted" style="width:40px; text-align:right;">${item.pct.toFixed(0)}%</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderAnalytics(data) {
+        renderAnalyticsTabs();
+
+        let content = "";
+        if (state.activeAnalyticsTab === "classes") {
+          const rows = (data.topClasses || []).slice(0, 8).map(item => ({
+            label: item.className || item.classId || "-",
+            value: Number(item.joinEvents || 0)
+          }));
+          content = renderHorizontalBarChart(rows);
+        } else if (state.activeAnalyticsTab === "teachers") {
+          const rows = (data.topTeachers || []).slice(0, 8).map(item => ({
+            label: item.teacherId || "-",
+            value: Number(item.students || 0)
+          }));
+          content = renderHorizontalBarChart(rows);
+        } else if (state.activeAnalyticsTab === "students") {
+          const rows = (data.topStudents || []).slice(0, 6).map(item => ({
+            label: item.userName || item.userId || "-",
+            value: Number(item.joins || 0)
+          }));
+          content = renderDonutChart(rows);
+        } else {
+          content = renderActivityLineChart(buildActivitySeries(data));
+        }
+
+        document.getElementById("analyticsContent").innerHTML = content;
       }
 
       function renderRankList(targetId, rows, buildRow) {
@@ -1457,6 +1872,13 @@
           };
         });
 
+        document.querySelectorAll("[data-analytics-tab]").forEach(button => {
+          button.onclick = () => {
+            state.activeAnalyticsTab = button.dataset.analyticsTab;
+            renderCurrentView();
+          };
+        });
+
         document.querySelectorAll("[data-history-tab]").forEach(button => {
           button.onclick = () => {
             state.activeHistoryTab = button.dataset.historyTab;
@@ -1496,9 +1918,10 @@
         }
 
         ensureSelection(data);
-        // renderStatusRow(data);
+        renderStatusRow(data);
         renderHero(data);
         renderLiveRooms(data);
+        renderAnalytics(data);
         renderSidebar(data);
         renderDetailPanel(data);
         renderHistoryTable(data);
