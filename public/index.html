@@ -1099,13 +1099,35 @@
         return Number(value || 0).toLocaleString("en-US");
       }
 
-      function formatDateTime(value) {
-        if (!value) {
-          return "-";
+      function parseDateValue(value) {
+        if (value === null || value === undefined || value === "") {
+          return null;
         }
 
-        const date = new Date(Number(value) || value);
-        if (Number.isNaN(date.getTime())) {
+        if (value instanceof Date) {
+          return Number.isNaN(value.getTime()) ? null : value;
+        }
+
+        if (typeof value === "number") {
+          const normalized = value < 1e12 ? value * 1000 : value;
+          const date = new Date(normalized);
+          return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        const numeric = Number(value);
+        if (Number.isFinite(numeric) && numeric > 0) {
+          const normalized = numeric < 1e12 ? numeric * 1000 : numeric;
+          const date = new Date(normalized);
+          return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+      }
+
+      function formatDateTime(value) {
+        const date = parseDateValue(value);
+        if (!date) {
           return "-";
         }
 
@@ -1291,7 +1313,11 @@
         const events = (data.recentEvents || [])
           .filter(item => item.timestamp)
           .slice()
-          .sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
+          .sort((a, b) => {
+            const aDate = parseDateValue(a.timestamp);
+            const bDate = parseDateValue(b.timestamp);
+            return (aDate ? aDate.getTime() : 0) - (bDate ? bDate.getTime() : 0);
+          });
 
         if (!events.length) {
           return [];
@@ -1299,7 +1325,12 @@
 
         const buckets = new Map();
         for (const event of events) {
-          const label = new Date(Number(event.timestamp)).toLocaleTimeString("en-US", {
+          const eventDate = parseDateValue(event.timestamp);
+          if (!eventDate) {
+            continue;
+          }
+
+          const label = eventDate.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit"
           });
