@@ -1153,7 +1153,7 @@ initTheme();
 
 document.getElementById("themeToggle").addEventListener("click", toggleTheme);
 
-document.getElementById("resetButton").addEventListener("click", async () => {
+document.getElementById("resetButton")?.addEventListener("click", async () => {
   if(confirm("Reset all data? This cannot be undone.")) await postJson("/api/reset");
 });
 
