@@ -718,8 +718,17 @@ async function performClassesFilter() {
   renderCurrentView();
 }
 
-function exportClassDetailExcel(classId, className) {
-  const s = (state.stats?.classDetails || []).find(x => x.classId === classId);
+async function exportClassDetailExcel(classId, className) {
+  let s = (state.stats?.classDetails || []).find(x => x.classId === classId);
+
+  if (!s) {
+    try {
+      const res = await fetch(`/api/classes/${encodeURIComponent(classId)}/detail`);
+      const js  = await res.json();
+      if (js.ok) s = js;
+    } catch (e) { /* fall through */ }
+  }
+
   if (!s) { alert("Detail data not available for this class."); return; }
 
   const wb = XLSX.utils.book_new();

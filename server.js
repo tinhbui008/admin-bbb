@@ -5,8 +5,11 @@ const { URL } = require("url");
 
 const CONFIG = require("./src/config");
 const db = require("./src/db");
-const { buildStats } = require("./src/services/statsBuilder");
+const { buildStats, buildParticipantActivity } = require("./src/services/statsBuilder");
 const { processWebhookPayload } = require("./src/services/eventProcessor");
+const classesDb = require("./src/db/queries/classes");
+const eventsDb = require("./src/db/queries/events");
+const meetingsDb = require("./src/db/queries/meetings");
 const {
   registerGlobalHook,
   listHooks,
@@ -226,6 +229,33 @@ async function handleDestroyHook(req, res) {
   }
 }
 
+async function handleClassDetail(classId, res) {
+  try {
+    const classDetail = await classesDb.getClassDetails(classId);
+    if (!classDetail) {
+      sendJson(res, 404, { ok: false, error: "Class not found" });
+      return;
+    }
+
+    const teacherIds = classDetail.teachers.map(t => t.teacherId);
+    const studentNameMap = new Map(classDetail.students.map(s => [s.userId, s.userName]));
+    const teacherNameMap = new Map(classDetail.teachers.map(t => [t.teacherId, t.teacherName]));
+
+    const [relatedEvents, participantsData] = await Promise.all([
+      eventsDb.getEventsByClassId(classId, 100),
+      meetingsDb.getParticipantsByClassId(classId)
+    ]);
+
+    const participantActivity = await buildParticipantActivity(
+      relatedEvents, teacherIds, studentNameMap, teacherNameMap, participantsData
+    );
+
+    sendJson(res, 200, { ok: true, ...classDetail, participantActivity });
+  } catch (error) {
+    sendJson(res, 500, { ok: false, error: error.message });
+  }
+}
+
 async function handleHealthCheck(res) {
   const dbHealth = await db.healthCheck();
   if (dbHealth.ok) {
@@ -284,6 +314,12 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "POST" && parsedUrl.pathname === "/api/reset") {
     await handleReset(res);
+    return;
+  }
+
+  const classDetailMatch = req.method === "GET" && parsedUrl.pathname.match(/^\/api\/classes\/(.+)\/detail$/);
+  if (classDetailMatch) {
+    await handleClassDetail(decodeURIComponent(classDetailMatch[1]), res);
     return;
   }
 
