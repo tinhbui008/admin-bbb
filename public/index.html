@@ -92,8 +92,10 @@
       display: flex; align-items: center; gap: 18px;
     }
     .nh-logo { display:flex; align-items:center; gap:11px; }
+    .logo-light { display:block; }
+    .logo-dark  { display:none; }
     [data-theme="dark"] .logo-light { display:none; }
-    [data-theme="dark"] .logo-dark  { display:block !important; }
+    [data-theme="dark"] .logo-dark  { display:block; }
     .nh-logo-box {
       width:40px; height:40px; border-radius:12px; flex-shrink:0;
       background: linear-gradient(150deg, var(--brand), var(--brand2));
@@ -295,8 +297,8 @@
 <header class="nh-header">
   <div class="nh-header-inner">
     <div class="nh-logo">
-      <img class="logo-light" src="/images/logo.png" alt="Nihaoma" style="height:44px;width:auto;display:block;">
-      <img class="logo-dark" src="/images/dark-mode-logo.jpg" alt="Nihaoma" style="height:44px;width:auto;display:none;">
+      <img class="logo-light" src="/images/logo.png" alt="Nihaoma" style="height:44px;width:auto;">
+      <img class="logo-dark" src="/images/dark-mode-logo.jpg" alt="Nihaoma" style="height:44px;width:auto;">
     </div>
 
     <!-- <div class="nh-badges">

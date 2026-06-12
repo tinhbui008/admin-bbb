@@ -1,380 +1,339 @@
-# Nihaoma BBB Admin Dashboard — Tài liệu hướng dẫn sử dụng
+# Nihaoma BBB Admin Dashboard — User Guide
 
-> Dành cho: Quản trị viên hệ thống  
-> Phiên bản: 1.1  
-
----
-
-## Mục lục
-
-1. [Hero Stats — Thống kê tổng hợp](#1-hero-stats--thống-kê-tổng-hợp)
-2. [Summary Strip — Số liệu tóm tắt](#2-summary-strip--số-liệu-tóm-tắt)
-3. [Live Active Rooms — Phòng học đang diễn ra](#3-live-active-rooms--phòng-học-đang-diễn-ra)
-4. [Analytics — Biểu đồ phân tích](#4-analytics--biểu-đồ-phân-tích)
-5. [Explore — Khám phá dữ liệu](#5-explore--khám-phá-dữ-liệu)
-   - 5.1 [Tab Classes — Lớp học](#51-tab-classes--lớp-học)
-   - 5.2 [Tab Teachers — Giáo viên](#52-tab-teachers--giáo-viên)
-   - 5.3 [Tab Students — Học sinh](#53-tab-students--học-sinh)
-6. [Sidebar — Bảng xếp hạng](#6-sidebar--bảng-xếp-hạng)
-7. [Dark Mode — Giao diện tối](#7-dark-mode--giao-diện-tối)
-8. [Cơ chế cập nhật dữ liệu thời gian thực](#8-cơ-chế-cập-nhật-dữ-liệu-thời-gian-thực)
+> For: System Administrators  
+> Version: 1.2  
 
 ---
 
-## 1. Hero Stats — Thống kê tổng hợp
+## Table of Contents
 
-Bốn thẻ lớn ngay bên dưới header, hiển thị các chỉ số lũy kế **từ trước đến nay** (toàn bộ lịch sử hệ thống).
+1. [Hero Stats — Key Metrics](#1-hero-stats--key-metrics)
+2. [Summary Strip — Unique Counts](#2-summary-strip--unique-counts)
+3. [Live Active Rooms](#3-live-active-rooms)
+4. [Analytics — Charts](#4-analytics--charts)
+5. [Explore — Data Browser](#5-explore--data-browser)
+   - 5.1 [Classes Tab](#51-classes-tab)
+   - 5.2 [Teachers Tab](#52-teachers-tab)
+   - 5.3 [Students Tab](#53-students-tab)
+6. [Sidebar — Leaderboards](#6-sidebar--leaderboards)
+7. [Dark Mode](#7-dark-mode)
 
-| Thẻ | Ý nghĩa | Ghi chú |
+---
+
+## 1. Hero Stats — Key Metrics
+
+Four large cards at the top of the page showing **all-time cumulative** figures across the entire system.
+
+| Card | Meaning | Notes |
 |---|---|---|
-| **Total Events** | Tổng số sự kiện webhook đã nhận được từ BBB | Bao gồm mọi loại sự kiện: tạo phòng, tham gia, rời khỏi, tin nhắn, v.v. |
-| **Meetings Created** | Tổng số phiên họp/buổi học đã được tạo | Mỗi lần giáo viên mở một room BBB sẽ tăng thêm 1 |
-| **Participants Joined** | Tổng số lượt tham gia (join) vào phòng học | Cùng một học sinh vào cùng một phòng 3 lần = 3 lượt |
-| **Participants Left** | Tổng số lượt rời khỏi (leave) phòng học | Tương tự cách tính với Participants Joined |
+| **Total Events** | Total webhook events received from BBB | Includes every event type: room created, join, leave, chat, etc. |
+| **Meetings Created** | Total number of BBB meeting sessions created | Increments each time a teacher opens a BBB room |
+| **Participants Joined** | Total number of join events | Same student joining the same room 3 times = 3 joins |
+| **Participants Left** | Total number of leave events | Counted the same way as Participants Joined |
 
-> **Lưu ý:** Đây là số liệu tích lũy toàn thời gian, không bị ảnh hưởng bởi bộ lọc ngày ở các tab bên dưới.
+> **Note:** These figures are cumulative over all time and are not affected by date filters in the tabs below.
 
 ---
 
-## 2. Summary Strip — Số liệu tóm tắt
+## 2. Summary Strip — Unique Counts
 
-Bốn thẻ nhỏ ngay bên dưới Hero Stats, thể hiện số lượng **đối tượng duy nhất** trong hệ thống.
+Four smaller cards below Hero Stats, showing the number of **distinct entities** in the system.
 
-| Thẻ | Ý nghĩa |
+| Card | Meaning |
 |---|---|
-| **Unique Meetings** | Số phiên họp/room duy nhất đã từng tồn tại |
-| **Unique Users** | Số học sinh duy nhất đã từng đăng nhập vào hệ thống |
-| **Unique Classes** | Số lớp học duy nhất trong hệ thống |
-| **Unique Teachers** | Số giáo viên duy nhất đã từng dạy |
+| **Unique Meetings** | Number of distinct meeting sessions ever recorded |
+| **Unique Users** | Number of distinct students ever logged into the system |
+| **Unique Classes** | Number of distinct classes in the system |
+| **Unique Teachers** | Number of distinct teachers who have ever taught |
 
-> Khác với Hero Stats (đếm số lượt), Summary Strip đếm **số thực thể** — mỗi học sinh, giáo viên, lớp học chỉ được đếm một lần dù hoạt động nhiều lần.
+> Unlike Hero Stats (which counts occurrences), Summary Strip counts **entities** — each student, teacher, or class is counted only once regardless of how many times they appear.
 
 ---
 
-## 3. Live Active Rooms — Phòng học đang diễn ra
+## 3. Live Active Rooms
 
-Section này hiển thị **thời gian thực** các phòng học đang hoạt động trên hệ thống BBB.
+This section displays **in real time** all BBB meeting rooms currently running on the system.
 
-### Thông tin hiển thị
+### Card Information
 
-Mỗi phòng học đang diễn ra được hiển thị dưới dạng thẻ với viền màu bên trái (mỗi phòng một màu để phân biệt):
+Each active room appears as a card with a colored left border (unique per room):
 
-| Thông tin | Mô tả |
+| Field | Description |
 |---|---|
-| **Tên phòng** | Tên buổi học/meeting đang chạy |
-| **Nhãn LIVE** | Badge xác nhận phòng đang hoạt động |
-| **Số người tham gia** (icon người) | Tổng số attendee hiện tại trong phòng |
-| **Số moderator** (icon shield) | Số giáo viên/moderator đang trong phòng |
-| **Trạng thái** (icon đồng hồ) | Trạng thái hoạt động của phòng |
+| **Room name** | Name of the currently running meeting/session |
+| **LIVE badge** | Confirms the room is active |
+| **Attendee count** (person icon) | Total number of attendees currently in the room |
+| **Moderator count** (shield icon) | Number of teachers/moderators currently in the room |
+| **Status** (clock icon) | Activity status of the room |
 
-### Khi không có phòng nào đang hoạt động
+### When No Rooms Are Active
 
-Hiển thị thông báo: *"No active classes — Meetings appear here in real time when they start."*
+Displays the message: *"No active classes — Meetings appear here in real time when they start."*
 
-### Cập nhật tự động
+### Automatic Updates
 
-Danh sách phòng được đồng bộ từ BBB API và cập nhật qua SSE. Khi có phòng mới bắt đầu hoặc kết thúc, giao diện tự động cập nhật mà không cần tải lại trang.
-
----
-
-## 4. Analytics — Biểu đồ phân tích
-
-Section Analytics cung cấp 6 loại biểu đồ, chuyển đổi qua các tab phía trên.
-
-### Tab Activity — Hoạt động theo ngày
-
-**Loại biểu đồ:** Line chart (đường)  
-**Dữ liệu:** 7 ngày gần nhất
-
-Biểu đồ gồm 3 đường:
-- **Meetings** (đỏ): Số phòng học được tạo mỗi ngày
-- **Joins** (xanh lá): Số lượt tham gia mỗi ngày
-- **Leaves** (vàng): Số lượt rời phòng mỗi ngày
-
-> Dùng để nhận biết ngày cao điểm, xu hướng hoạt động trong tuần.
+The room list is synced from the BBB API and updated via SSE. When a new room starts or ends, the UI updates automatically without a page reload.
 
 ---
 
-### Tab Peak Hours — Giờ cao điểm
+## 4. Analytics — Charts
 
-**Loại biểu đồ:** Bar chart (cột)  
-**Dữ liệu:** Phân bố theo 24 giờ trong ngày
+The Analytics section provides 6 chart types, switchable via the tabs above.
 
-Mỗi cột đại diện cho một khung giờ (00:00–23:00), chiều cao thể hiện số lượt join trong khung giờ đó. Cột cao nhất được tô đỏ để dễ nhận biết.
+### Activity Tab
 
-> Dùng để xác định khung giờ học phổ biến, lên kế hoạch tài nguyên server.
+**Chart type:** Line chart  
+**Data:** Last 7 days
 
----
+Three lines are shown:
+- **Meetings** (red): Number of rooms created per day
+- **Joins** (green): Number of join events per day
+- **Leaves** (yellow): Number of leave events per day
 
-### Tab Duration — Thời lượng buổi học
-
-**Loại biểu đồ:** Line chart (đường)  
-**Dữ liệu:** Thời lượng trung bình các buổi học theo ngày (đơn vị: phút)
-
-> Dùng để theo dõi độ dài trung bình các buổi học, phát hiện buổi học quá ngắn hoặc quá dài bất thường.
+> Use this to identify peak days and weekly activity trends.
 
 ---
 
-### Tab Participants — Phân bố người dùng
+### Peak Hours Tab
 
-**Loại biểu đồ:** Doughnut chart  
-**Dữ liệu:** Tỷ lệ Giáo viên (Teachers) / Học sinh (Students) trong hệ thống
+**Chart type:** Bar chart  
+**Data:** Distribution across 24 hours of the day
 
-> Dùng để nắm tổng quan cơ cấu người dùng.
+Each bar represents one hour slot (00:00–23:00); the height shows the number of joins in that slot. The tallest bar is highlighted in red.
+
+> Use this to identify popular class times and plan server resources.
 
 ---
 
-### Tab Events — Phân loại sự kiện
+### Duration Tab
 
-**Loại biểu đồ:** Doughnut chart  
-**Dữ liệu:** 100 sự kiện webhook gần nhất, phân loại theo:
+**Chart type:** Line chart  
+**Data:** Average session duration per day (in minutes)
 
-| Màu | Loại sự kiện |
+> Use this to monitor average class length and spot unusually short or long sessions.
+
+---
+
+### Participants Tab
+
+**Chart type:** Doughnut chart  
+**Data:** Ratio of Teachers to Students in the system
+
+> Use this to get an overview of the user base composition.
+
+---
+
+### Events Tab
+
+**Chart type:** Doughnut chart  
+**Data:** Last 100 webhook events, broken down by type:
+
+| Color | Event type |
 |---|---|
-| Đỏ | Joins — lượt tham gia |
-| Xanh dương | Leaves — lượt rời phòng |
-| Xanh lá | Messages — tin nhắn chat |
-| Vàng | Reactions — phản ứng emoji |
-| Tím | Polls — bỏ phiếu |
-| Cyan | Hands — giơ tay phát biểu |
+| Red | Joins |
+| Blue | Leaves |
+| Green | Messages (chat) |
+| Yellow | Reactions (emoji) |
+| Purple | Polls |
+| Cyan | Raise hands |
 
-> Dùng để hiểu mức độ tương tác của học sinh trong các buổi học.
-
----
-
-### Tab Workload — Khối lượng công việc giáo viên
-
-**Loại biểu đồ:** Doughnut chart  
-**Dữ liệu:** Top 10 giáo viên, mỗi phần thể hiện số lớp họ phụ trách
-
-> Dùng để đánh giá mức độ đóng góp và phân bổ công việc giữa các giáo viên.
+> Use this to understand how actively students interact during sessions.
 
 ---
 
-## 5. Explore — Khám phá dữ liệu
+### Workload Tab
 
-Section Explore là nơi xem chi tiết và tìm kiếm dữ liệu. Gồm 3 tab: **Classes, Teachers, Students**.
+**Chart type:** Doughnut chart  
+**Data:** Top 10 teachers, each slice showing number of classes they handle
 
-Giao diện chia làm 2 vùng:
-- **Bên trái (tabContent):** Bảng danh sách
-- **Bên phải (detailPanel):** Chi tiết item đang được chọn
+> Use this to assess contribution levels and workload distribution across teachers.
 
 ---
 
-### 5.1 Tab Classes — Lớp học
+## 5. Explore — Data Browser
 
-#### Bộ lọc tìm kiếm
+The Explore section is where you view detail and search data. It contains 3 tabs: **Classes, Teachers, Students**.
 
-Nằm phía trên bảng, gồm các ô:
+The layout is split into two panels:
+- **Left (tabContent):** Data table / list
+- **Right (detailPanel):** Detail view of the selected item
 
-| Ô lọc | Chức năng |
+---
+
+### 5.1 Classes Tab
+
+#### Filters
+
+Located above the table:
+
+| Field | Function |
 |---|---|
-| **Search class...** | Tìm theo tên lớp hoặc class ID (gõ Enter hoặc nhấn Filter) |
-| **From** | Ngày bắt đầu lọc (mặc định: ngày hôm nay) |
-| **To** | Ngày kết thúc lọc (mặc định: ngày hôm nay) |
-| **Nút Filter** | Áp dụng bộ lọc, gọi API để lấy kết quả |
-| **Nút Clear filter** | Xóa tất cả điều kiện lọc, quay về danh sách mặc định |
-| **Nút Export Excel** | Xuất toàn bộ kết quả hiện tại ra file `.xlsx` |
+| **Search class...** | Search by class name or class ID (press Enter or click Filter) |
+| **From** | Start date filter (defaults to today) |
+| **To** | End date filter (defaults to today) |
+| **Filter button** | Apply filters and fetch results from the API |
+| **Clear filter button** | Remove all filters and return to the default list |
+| **Export Excel button** | Export all currently displayed results to `.xlsx` |
 
-> **Lưu ý:** Bộ lọc ngày áp dụng theo `ngày tạo lớp` (created_at), không phải ngày diễn ra buổi học.
+> **Note:** The date filter applies to the class **created date** (`created_at`), not the date of individual meetings.
 
-#### Bảng danh sách lớp
+#### Classes Table
 
-| Cột | Ý nghĩa |
+| Column | Meaning |
 |---|---|
-| **Class** | Tên lớp (nhấn để xem chi tiết ở panel bên phải) |
-| **Created Date** | Ngày giờ lớp được tạo lần đầu trong hệ thống |
-| **Teachers** | Số giáo viên đã dạy lớp này |
-| **Students** | Số học sinh đã từng tham gia lớp này |
-| **Joins** | Tổng số lượt join vào lớp |
-| **Leaves** | Tổng số lượt leave khỏi lớp |
-| **Status** | Trạng thái hiện tại của lớp (xem bảng bên dưới) |
-| **Last Ended** | Thời điểm meeting cuối cùng kết thúc, hoặc `-` nếu chưa có |
-| **Nút Detail** (xanh lá) | Xuất file Excel chi tiết hoạt động của lớp đó |
+| **Class** | Class name — click to load detail in the right panel |
+| **Created Date** | Date and time the class was first recorded in the system |
+| **Teachers** | Number of teachers who have taught this class |
+| **Students** | Number of students who have ever joined this class |
+| **Joins** | Total join events for this class |
+| **Leaves** | Total leave events for this class |
+| **Status** | Current status of the class (see table below) |
+| **Last Ended** | When the most recent meeting ended, or `-` if none |
+| **Detail button** (green) | Export a detailed Excel file for this class |
 
-#### Trạng thái lớp (cột Status)
+#### Class Status (Status column)
 
-| Badge | Màu | Ý nghĩa |
+| Badge | Color | Meaning |
 |---|---|---|
-| **Live** (nhấp nháy) | Xanh lá | Lớp đang có meeting chạy trực tiếp trên BBB |
-| **Ended** | Xám | Lớp đã có ít nhất một meeting đã kết thúc và hiện không có meeting nào đang chạy |
-| **No meetings** | Xám nhạt | Lớp chưa từng có meeting nào được ghi nhận |
+| **Live** (pulsing) | Green | The class has a meeting currently running on BBB |
+| **Ended** | Gray | At least one past meeting exists and no meeting is currently running |
+| **No meetings** | Light gray | No meetings have ever been recorded for this class |
 
-#### Phân trang
+#### Pagination
 
-Khi kết quả có nhiều hơn 20 lớp, thanh phân trang xuất hiện bên dưới bảng với nút **Prev** / **Next** và thông tin `Page X / Y · Z classes`.
+When results exceed 20 classes, a pagination bar appears below the table with **Prev** / **Next** buttons and the label `Page X / Y · Z classes`.
 
-#### Export Excel — Toàn bộ danh sách
+#### Export Excel — Full List
 
-Nhấn **Export Excel** trên thanh lọc để xuất tất cả lớp đang hiển thị ra file:  
+Click **Export Excel** in the filter bar to export all currently displayed classes:  
 `classes_YYYY-MM-DD.xlsx`
 
-Gồm các cột: `Class ID, Class Name, Created Date, Teachers, Students, Joins, Leaves`
+Columns: `Class ID, Class Name, Created Date, Teachers, Students, Joins, Leaves`
 
-#### Export Excel — Chi tiết từng lớp
+#### Export Excel — Per-Class Detail
 
-Nhấn nút **Detail** (màu xanh lá) ở cuối mỗi hàng để xuất file chi tiết lớp đó:  
-`class_<tên lớp>_YYYY-MM-DD.xlsx`
+Click the **Detail** button (green) at the end of any row to export a detailed activity file:  
+`class_<class name>_YYYY-MM-DD.xlsx`
 
-File gồm 1 sheet **Room Activity** với các cột:
+The file contains one sheet named **Room Activity** with the following columns:
 
-| Cột | Ý nghĩa |
+| Column | Meaning |
 |---|---|
-| **Name** | Tên người tham gia |
-| **Mod** | Có phải Moderator (giáo viên) không — Yes/No |
-| **Score** | Điểm hoạt động tổng hợp (tổng số tương tác) |
-| **Talk** | Thời gian phát biểu (nói) |
-| **Webcam** | Thời gian bật webcam |
-| **Msgs** | Số tin nhắn chat đã gửi |
-| **React** | Số phản ứng emoji đã sử dụng |
-| **Polls** | Số lần tham gia bỏ phiếu |
-| **Hands** | Số lần giơ tay phát biểu |
-| **Joined** | Thời điểm vào phòng |
-| **Left** | Thời điểm rời phòng |
-| **Dur** | Tổng thời gian ở trong phòng |
+| **Name** | Participant name |
+| **Mod** | Whether the participant is a Moderator (teacher) — Yes / No |
+| **Score** | Composite activity score (total interactions) |
+| **Talk** | Time spent talking |
+| **Webcam** | Time webcam was on |
+| **Msgs** | Number of chat messages sent |
+| **React** | Number of emoji reactions used |
+| **Polls** | Number of poll votes cast |
+| **Hands** | Number of times hand was raised |
+| **Joined** | Time the participant entered the room |
+| **Left** | Time the participant left the room |
+| **Dur** | Total time spent in the room |
 
-#### Panel chi tiết lớp (bên phải)
+#### Class Detail Panel (right side)
 
-Khi nhấn vào tên một lớp trong bảng, panel bên phải hiển thị:
+Clicking a class name loads the detail panel on the right, which shows:
 
-- **Tên lớp** và số lượt join
+- **Class name** and total join count
 - **Metrics:** Teachers, Students, Joins, Leaves
-- **Danh sách giáo viên** (kèm số meetings đã dạy)
-- **Top Students** (6 học sinh tham gia nhiều nhất)
-- **Room Activity table:** Bảng chi tiết hoạt động của từng người tham gia (tương tự nội dung export Excel)
+- **Teacher list** (with number of meetings taught)
+- **Top Students** (top 6 by participation)
+- **Room Activity table:** Detailed per-participant activity (same data as the Detail export)
 
 ---
 
-### 5.2 Tab Teachers — Giáo viên
+### 5.2 Teachers Tab
 
-#### Bảng danh sách giáo viên
+#### Teachers Table
 
-| Cột | Ý nghĩa |
+| Column | Meaning |
 |---|---|
-| **Teacher** | ID/Tên giáo viên (nhấn để xem chi tiết) |
-| **Classes** | Số lớp giáo viên đã dạy |
-| **Teachers** | Số giáo viên cùng dạy trong các lớp đó |
-| **Joins** | Tổng số lượt join vào các lớp của giáo viên |
-| **Leaves** | Tổng số lượt leave khỏi các lớp |
+| **Teacher** | Teacher ID/name — click to view detail |
+| **Classes** | Number of classes the teacher has taught |
+| **Teachers** | Number of co-teachers in those classes |
+| **Joins** | Total join events across the teacher's classes |
+| **Leaves** | Total leave events across the teacher's classes |
 
-#### Panel chi tiết giáo viên (bên phải)
+#### Teacher Detail Panel (right side)
 
-- **Avatar** với chữ viết tắt tên
+- **Avatar** with initials
 - **Metrics:** Students, Meetings, Joins, Leaves
-- **Danh sách lớp** mà giáo viên đã dạy
+- **Class list** the teacher has taught
 
 ---
 
-### 5.3 Tab Students — Học sinh
+### 5.3 Students Tab
 
-#### Bảng danh sách học sinh
+#### Students Table
 
-| Cột | Ý nghĩa |
+| Column | Meaning |
 |---|---|
-| **Student** | Tên học sinh (nhấn để xem chi tiết) |
-| **Classes** | Số lớp học sinh đã tham gia |
-| **Teachers** | Số giáo viên học sinh đã học cùng |
-| **Joins** | Tổng số lượt join |
-| **Leaves** | Tổng số lượt leave |
+| **Student** | Student name — click to view detail |
+| **Classes** | Number of classes the student has attended |
+| **Teachers** | Number of distinct teachers the student has studied with |
+| **Joins** | Total join events |
+| **Leaves** | Total leave events |
 
-#### Panel chi tiết học sinh (bên phải)
+#### Student Detail Panel (right side)
 
-- **Avatar** với chữ viết tắt tên
+- **Avatar** with initials
 - **Metrics:** Classes, Teachers, Joins, Leaves
-- **Related Classes:** Danh sách lớp đã tham gia
-- **Related Teachers:** Danh sách giáo viên đã học cùng
+- **Related Classes:** List of classes attended
+- **Related Teachers:** List of teachers studied with
 
 ---
 
-## 6. Sidebar — Bảng xếp hạng
+## 6. Sidebar — Leaderboards
 
-Sidebar cố định bên phải màn hình (sticky), hiển thị top 5 trong 3 bảng xếp hạng.
+The sidebar is fixed on the right side of the screen (sticky) and displays the top 5 entries in three leaderboards.
 
-### Top Classes — Lớp học nổi bật nhất
+### Top Classes — Most Active Classes
 
-Xếp theo số lượt **join nhiều nhất**, hiển thị top 5.
+Ranked by **highest total join count**, showing top 5.
 
-| Thông tin | Ý nghĩa |
+| Field | Meaning |
 |---|---|
-| Số thứ tự (#1–#5) | Thứ hạng |
-| Tên lớp | Tên lớp học |
-| Sub-text | Số giáo viên · số học sinh |
-| Số bên phải (đỏ) | Tổng số lượt join |
+| Rank (#1–#5) | Position in the leaderboard |
+| Class name | Name of the class |
+| Sub-text | Number of teachers · number of students |
+| Right-side number (red) | Total join count |
 
 ---
 
-### Top Teachers — Giáo viên tích cực nhất
+### Top Teachers — Most Active Teachers
 
-Xếp theo số lượt **join vào lớp của giáo viên đó nhiều nhất**, hiển thị top 5.
+Ranked by **highest total joins across their classes**, showing top 5.
 
-| Thông tin | Ý nghĩa |
+| Field | Meaning |
 |---|---|
-| Avatar | Chữ viết tắt tên giáo viên |
-| Tên giáo viên | ID/Tên |
-| Sub-text | Số lớp · số học sinh |
-| Số bên phải (vàng) | Tổng số lượt join vào lớp của giáo viên |
+| Avatar | Teacher initials |
+| Teacher name | ID / display name |
+| Sub-text | Number of classes · number of students |
+| Right-side number (yellow) | Total join count across the teacher's classes |
 
 ---
 
-### Top Students — Học sinh chuyên cần nhất
+### Top Students — Most Dedicated Students
 
-Xếp theo **số lớp đã tham gia nhiều nhất**, hiển thị top 5.
+Ranked by **number of distinct classes attended**, showing top 5.
 
-| Thông tin | Ý nghĩa |
+| Field | Meaning |
 |---|---|
-| Avatar | Chữ viết tắt tên học sinh |
-| Tên học sinh | Tên hiển thị |
-| Sub-text | Số lượt join · số giáo viên đã học cùng |
-| Số bên phải (xanh lá) | Số lớp đã tham gia |
+| Avatar | Student initials |
+| Student name | Display name |
+| Sub-text | Total joins · number of teachers studied with |
+| Right-side number (green) | Number of classes attended |
 
 ---
 
-## 7. Dark Mode — Giao diện tối
+## 7. Dark Mode
 
-Nhấn biểu tượng **mặt trời/mặt trăng** ở góc phải header để chuyển đổi giao diện.
+Click the **sun / moon icon** in the top-right corner of the header to toggle between themes.
 
-- **Light mode** (mặc định): Nền trắng/hồng nhạt, phù hợp ban ngày
-- **Dark mode**: Nền tối, giảm mỏi mắt khi làm việc buổi tối
+- **Light mode** (default): White/soft pink background, suited for daytime use
+- **Dark mode**: Dark background, easier on the eyes for evening work
 
-Lựa chọn được **lưu vào trình duyệt** (localStorage), giữ nguyên khi tải lại trang hoặc đóng/mở trình duyệt.
+The preference is **saved in the browser** (localStorage) and persists across page reloads and browser restarts.
 
----
-
-## 8. Cơ chế cập nhật dữ liệu thời gian thực
-
-Dashboard sử dụng **SSE (Server-Sent Events)** để nhận dữ liệu cập nhật liên tục từ server mà không cần tải lại trang.
-
-### Luồng hoạt động
-
-```
-1. Trang load  →  Gọi /api/stats  →  Hiển thị dữ liệu ban đầu
-2. Kết nối SSE /api/stream  →  Nhận event "stats" khi có thay đổi
-3. BBB gửi webhook  →  Backend xử lý  →  Đẩy SSE đến tất cả client đang mở dashboard
-4. Dashboard tự động re-render các section bị ảnh hưởng
-```
-
-### Dấu hiệu dashboard đang hoạt động bình thường
-
-- Số liệu ở Live Active Rooms phản ánh đúng trạng thái thực tế trên BBB
-- Khi có học sinh join/leave, số liệu ở Hero Stats tăng tức thì
-- Không cần nhấn F5 để cập nhật
-
-### Xử lý khi mất kết nối
-
-Nếu kết nối SSE bị gián đoạn (mạng chập chờn, server restart), EventSource API của trình duyệt sẽ **tự động kết nối lại** sau vài giây. Dữ liệu sẽ tự đồng bộ lại khi kết nối được khôi phục.
-
----
-
-## Phụ lục — Bảng thuật ngữ
-
-| Thuật ngữ | Giải thích |
-|---|---|
-| **BBB** | BigBlueButton — phần mềm hội nghị trực tuyến mã nguồn mở |
-| **Webhook** | Cơ chế BBB tự động gửi thông báo đến hệ thống Nihaoma khi có sự kiện |
-| **SSE** | Server-Sent Events — giao thức truyền dữ liệu một chiều từ server đến trình duyệt theo thời gian thực |
-| **Room / Meeting** | Một phòng học/buổi họp trên BBB |
-| **Class** | Một lớp học — đơn vị tổ chức chứa nhiều meetings, giáo viên và học sinh |
-| **Moderator** | Người có quyền điều phối phòng học (thường là giáo viên) |
-| **Join event** | Sự kiện ghi nhận khi ai đó vào phòng học |
-| **Leave event** | Sự kiện ghi nhận khi ai đó rời phòng học |
-| **Activity Score** | Điểm tổng hợp mức độ tham gia: cộng tổng số tin nhắn + phản ứng + bỏ phiếu + giơ tay + sự kiện talk/webcam |
