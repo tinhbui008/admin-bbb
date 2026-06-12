@@ -1135,7 +1135,7 @@ document.getElementById("resetButton")?.addEventListener("click", async () => {
   if(confirm("Reset all data? This cannot be undone.")) await postJson("/api/reset");
 });
 
-document.getElementById("registerHookBtn").addEventListener("click", async () => {
+document.getElementById("registerHookBtn")?.addEventListener("click", async () => {
   try { const r=await postJson("/api/hooks/register"); alert(r.message||"Hook registered."); }
   catch(e) { alert("Failed to register hook."); }
 });
