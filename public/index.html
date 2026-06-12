@@ -387,7 +387,6 @@
           <button class="nh-etab active" data-tab="classes">Classes</button>
           <button class="nh-etab" data-tab="teachers">Teachers</button>
           <button class="nh-etab" data-tab="students">Students</button>
-          <button class="nh-etab" data-tab="history">History</button>
         </div>
         <div id="tabContent"></div>
         <div id="detailPanel"></div>
@@ -620,7 +619,7 @@ function renderSidebar(data) {
       <div class="nh-lb-row">
         <span class="nh-lb-av" style="background:var(--emeraldSoft);color:var(--emerald);">${initials(it.userName||it.userId)}</span>
         <div class="nh-lb-info"><div class="nh-lb-name">${it.userName||it.userId||"-"}</div><div class="nh-lb-sub">${it.joins||0} joins · ${it.teachers||0} teachers</div></div>
-        <span class="nh-lb-val" style="color:var(--emerald);">${it.classes||0} classes</span>
+        <span class="nh-lb-val" style="color:var(--emerald);">${it.classes||0} classes joined</span>
       </div>`).join("") || noData();
   }
 }
@@ -661,6 +660,13 @@ function renderClassesTable(data) {
       Detail
     </button>`;
 
+  const liveClassIds = new Set((state.stats?.liveRooms||[]).map(r=>r.classId).filter(Boolean));
+  const statusBadge = (classId, lastEndedAt) => {
+    if (liveClassIds.has(classId)) return `<span class="nh-s-live"><span></span>Live</span>`;
+    if (lastEndedAt) return `<span class="nh-chip">Ended</span>`;
+    return `<span class="nh-chip" style="color:var(--text3);">No meetings</span>`;
+  };
+
   let rows, tblSource;
   if (classFilterState.results) {
     tblSource = classFilterState.results.data;
@@ -668,16 +674,20 @@ function renderClassesTable(data) {
       <td><button class="nh-tlink" data-class-id="${it.classId}">${it.className||it.classId||"-"}</button></td>
       <td class="nh-muted nh-mono">${fmtDTen(it.createdAt)}</td>
       <td>${it.teacherCount||0}</td><td>${it.studentCount||0}</td><td>${it.joinEvents||0}</td><td>${it.leaveEvents||0}</td>
+      <td>${statusBadge(it.classId, it.lastEndedAt)}</td>
+      <td class="nh-muted nh-mono" style="font-size:11.5px;">${it.lastEndedAt ? fmtDTen(it.lastEndedAt) : "-"}</td>
       <td>${exportBtn(it.classId, it.className)}</td>
-    </tr>`).join("") || `<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3);">No classes found</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="9" style="padding:20px;text-align:center;color:var(--text3);">No classes found</td></tr>`;
   } else {
     tblSource = data.topClasses || [];
     rows = tblSource.map(it => `<tr>
       <td><button class="nh-tlink" data-class-id="${it.classId}">${it.className||it.classId||"-"}</button></td>
       <td class="nh-muted nh-mono">${fmtDT(it.createdAt)}</td>
       <td>${it.teachers||0}</td><td>${it.students||0}</td><td>${it.joinEvents||0}</td><td>${it.leaveEvents||0}</td>
+      <td>${statusBadge(it.classId, it.lastEndedAt)}</td>
+      <td class="nh-muted nh-mono" style="font-size:11.5px;">${it.lastEndedAt ? fmtDT(it.lastEndedAt) : "-"}</td>
       <td>${exportBtn(it.classId, it.className)}</td>
-    </tr>`).join("") || `<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text3);">No data</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="9" style="padding:20px;text-align:center;color:var(--text3);">No data</td></tr>`;
   }
 
   const pgn = classFilterState.results ? (() => {
@@ -693,7 +703,7 @@ function renderClassesTable(data) {
   })() : "";
 
   return filterBar + `<div class="nh-tbl-wrap"><table class="nh-tbl">
-    <thead><tr><th>Class</th><th>Created Date</th><th>Teachers</th><th>Students</th><th>Joins</th><th>Leaves</th><th></th></tr></thead>
+    <thead><tr><th>Class</th><th>Created Date</th><th>Teachers</th><th>Students</th><th>Joins</th><th>Leaves</th><th>Status</th><th>Last Ended</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table></div>` + pgn;
 }
 
