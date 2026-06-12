@@ -637,19 +637,19 @@ function renderClassesTable(data) {
     <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:13px;padding:12px 14px;background:var(--card2);border:1px solid var(--border);border-radius:11px;">
       <div class="nh-srch-wrap">
         <span class="nh-srch-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
-        <input type="text" id="clsSearch" class="nh-srch-inp" placeholder="Tìm lớp…" value="${classFilterState.search}" style="width:160px;"/>
+        <input type="text" id="clsSearch" class="nh-srch-inp" placeholder="Search class..." value="${classFilterState.search}" style="width:160px;"/>
       </div>
-      <span style="font-size:12px;color:var(--text3);">Từ:</span>
+      <span style="font-size:12px;color:var(--text3);">From:</span>
       <input type="date" id="clsFrom" class="nh-hist-inp" value="${classFilterState.dateFrom}" style="height:34px;"/>
-      <span style="font-size:12px;color:var(--text3);">Đến:</span>
+      <span style="font-size:12px;color:var(--text3);">To:</span>
       <input type="date" id="clsTo" class="nh-hist-inp" value="${classFilterState.dateTo}" style="height:34px;"/>
       <button id="clsApply" class="nh-btn-primary" style="height:34px;padding:0 14px;font-size:12.5px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        Lọc
+        Filter
       </button>
-      ${isFiltered ? `<button id="clsClear" class="nh-btn-ghost" style="height:34px;font-size:12.5px;">Xoá filter</button>` : ""}
-      ${classFilterState.loading ? `<span style="font-size:12px;color:var(--text3);">Đang tải…</span>` : ""}
-      ${classFilterState.results ? `<span style="font-size:12px;color:var(--emerald);font-weight:600;">${classFilterState.results.pagination.total} kết quả</span>` : ""}
+      ${isFiltered ? `<button id="clsClear" class="nh-btn-ghost" style="height:34px;font-size:12.5px;">Clear filter</button>` : ""}
+      ${classFilterState.loading ? `<span style="font-size:12px;color:var(--text3);">Loading…</span>` : ""}
+      ${classFilterState.results ? `<span style="font-size:12px;color:var(--emerald);font-weight:600;">${classFilterState.results.pagination.total} results</span>` : ""}
     </div>`;
 
   let rows, tblSource;
@@ -659,7 +659,7 @@ function renderClassesTable(data) {
       <td><button class="nh-tlink" data-class-id="${it.classId}">${it.className||it.classId||"-"}</button></td>
       <td class="nh-muted nh-mono">${fmtDTen(it.createdAt)}</td>
       <td>${it.teacherCount||0}</td><td>${it.studentCount||0}</td><td>${it.joinEvents||0}</td><td>${it.leaveEvents||0}</td>
-    </tr>`).join("") || `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);">Không tìm thấy lớp nào</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);">No classes found</td></tr>`;
   } else {
     tblSource = data.topClasses || [];
     rows = tblSource.map(it => `<tr>
@@ -673,16 +673,16 @@ function renderClassesTable(data) {
     const p = classFilterState.results.pagination;
     if (p.totalPages <= 1) return "";
     return `<div class="nh-pgn" style="margin-top:11px;">
-      <span>Trang ${p.page} / ${p.totalPages} · ${p.total} lớp</span>
+      <span>Page ${p.page} / ${p.totalPages} · ${p.total} classes</span>
       <div style="display:flex;gap:6px;">
-        <button class="nh-pgn-btn cls-page-btn" data-page="${p.page-1}" ${p.page<=1?"disabled":""}>Trước</button>
-        <button class="nh-pgn-btn cls-page-btn" data-page="${p.page+1}" ${p.page>=p.totalPages?"disabled":""}>Sau</button>
+        <button class="nh-pgn-btn cls-page-btn" data-page="${p.page-1}" ${p.page<=1?"disabled":""}>Prev</button>
+        <button class="nh-pgn-btn cls-page-btn" data-page="${p.page+1}" ${p.page>=p.totalPages?"disabled":""}>Next</button>
       </div>
     </div>`;
   })() : "";
 
   return filterBar + `<div class="nh-tbl-wrap"><table class="nh-tbl">
-    <thead><tr><th>Lớp</th><th>Ngày tạo</th><th>GV</th><th>HS</th><th>Joins</th><th>Leaves</th></tr></thead>
+    <thead><tr><th>Class</th><th>Created Date</th><th>Teachers</th><th>Students</th><th>Joins</th><th>Leaves</th></tr></thead>
     <tbody>${rows}</tbody></table></div>` + pgn;
 }
 
