@@ -592,28 +592,37 @@ function renderLiveRooms(data) {
 // ============================================================
 function renderSidebar(data) {
   const cls = document.getElementById("topClassesList");
-  if (cls) cls.innerHTML = (data.topClasses||[]).slice(0,5).map((it,i) => `
-    <div class="nh-lb-row">
-      <span class="nh-lb-rank">${i+1}</span>
-      <div class="nh-lb-info"><div class="nh-lb-name">${it.className||it.classId||"-"}</div><div class="nh-lb-sub">${it.teachers||0} teachers · ${it.students||0} students</div></div>
-      <span class="nh-lb-val" style="color:var(--brand);">${it.joinEvents||0}</span>
-    </div>`).join("") || noData();
+  if (cls) {
+    const list = [...(data.topClasses||[])].sort((a,b)=>(b.joinEvents||0)-(a.joinEvents||0)).slice(0,5);
+    cls.innerHTML = list.map((it,i) => `
+      <div class="nh-lb-row">
+        <span class="nh-lb-rank">${i+1}</span>
+        <div class="nh-lb-info"><div class="nh-lb-name">${it.className||it.classId||"-"}</div><div class="nh-lb-sub">${it.teachers||0} teachers · ${it.students||0} students</div></div>
+        <span class="nh-lb-val" style="color:var(--brand);">${it.joinEvents||0} joins</span>
+      </div>`).join("") || noData();
+  }
 
   const tch = document.getElementById("topTeachersList");
-  if (tch) tch.innerHTML = (data.topTeachers||[]).slice(0,5).map(it => `
-    <div class="nh-lb-row">
-      <span class="nh-lb-av" style="background:var(--amberSoft);color:var(--amber);">${initials(it.teacherId)}</span>
-      <div class="nh-lb-info"><div class="nh-lb-name">${it.teacherId||"-"}</div><div class="nh-lb-sub">${it.classes||0} classes · ${it.students||0} students</div></div>
-      <span class="nh-lb-val" style="color:var(--amber);">${it.joinEvents||0}</span>
-    </div>`).join("") || noData();
+  if (tch) {
+    const list = [...(data.topTeachers||[])].sort((a,b)=>(b.joinEvents||0)-(a.joinEvents||0)).slice(0,5);
+    tch.innerHTML = list.map(it => `
+      <div class="nh-lb-row">
+        <span class="nh-lb-av" style="background:var(--amberSoft);color:var(--amber);">${initials(it.teacherId)}</span>
+        <div class="nh-lb-info"><div class="nh-lb-name">${it.teacherId||"-"}</div><div class="nh-lb-sub">${it.classes||0} classes · ${it.students||0} students</div></div>
+        <span class="nh-lb-val" style="color:var(--amber);">${it.joinEvents||0} joins</span>
+      </div>`).join("") || noData();
+  }
 
   const stu = document.getElementById("topStudentsList");
-  if (stu) stu.innerHTML = (data.topStudents||[]).slice(0,5).map(it => `
-    <div class="nh-lb-row">
-      <span class="nh-lb-av" style="background:var(--emeraldSoft);color:var(--emerald);">${initials(it.userName||it.userId)}</span>
-      <div class="nh-lb-info"><div class="nh-lb-name">${it.userName||it.userId||"-"}</div><div class="nh-lb-sub">${it.classes||0} classes · ${it.joins||0} joins</div></div>
-      <span class="nh-lb-val" style="color:var(--emerald);">${it.joins||0}</span>
-    </div>`).join("") || noData();
+  if (stu) {
+    const list = [...(data.topStudents||[])].sort((a,b)=>(b.classes||0)-(a.classes||0)).slice(0,5);
+    stu.innerHTML = list.map(it => `
+      <div class="nh-lb-row">
+        <span class="nh-lb-av" style="background:var(--emeraldSoft);color:var(--emerald);">${initials(it.userName||it.userId)}</span>
+        <div class="nh-lb-info"><div class="nh-lb-name">${it.userName||it.userId||"-"}</div><div class="nh-lb-sub">${it.joins||0} joins · ${it.teachers||0} teachers</div></div>
+        <span class="nh-lb-val" style="color:var(--emerald);">${it.classes||0} classes</span>
+      </div>`).join("") || noData();
+  }
 }
 
 function noData() { return `<div style="font-size:12px;color:var(--text3);padding:8px 6px;">No data yet</div>`; }
