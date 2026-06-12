@@ -657,7 +657,8 @@ function renderClassesTable(data) {
       ${classFilterState.results ? `<span style="font-size:12px;color:var(--emerald);font-weight:600;">${classFilterState.results.pagination.total} results</span>` : ""}
     </div>`;
 
-  const exportBtn = (id, name) => `<button class="nh-btn-ghost cls-detail-export-btn" data-class-id="${id}" data-class-name="${name||id}" style="height:28px;padding:0 10px;font-size:11.5px;color:var(--emerald);border-color:var(--emerald);gap:5px;">
+  const escAttr = v => String(v||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;");
+  const exportBtn = (id, name) => `<button class="nh-btn-ghost cls-detail-export-btn" data-class-id="${escAttr(id)}" data-class-name="${escAttr(name||id)}" style="height:28px;padding:0 10px;font-size:11.5px;color:var(--emerald);border-color:var(--emerald);gap:5px;">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Detail
     </button>`;
@@ -719,51 +720,69 @@ async function performClassesFilter() {
 }
 
 async function exportClassDetailExcel(classId, className) {
+  console.log("[Export] classId:", classId, "className:", className);
   let s = (state.stats?.classDetails || []).find(x => x.classId === classId);
+  console.log("[Export] found in classDetails:", !!s);
 
   if (!s) {
     try {
-      const res = await fetch(`/api/classes/${encodeURIComponent(classId)}/detail`);
+      const url = `/api/classes/${encodeURIComponent(classId)}/detail`;
+      console.log("[Export] fetching:", url);
+      const res = await fetch(url);
       const js  = await res.json();
+      console.log("[Export] API response ok:", js.ok, "students:", js.students?.length, "activity:", js.participantActivity?.length);
       if (js.ok) s = js;
-    } catch (e) { /* fall through */ }
+      else console.warn("[Export] API error:", js.error);
+    } catch (e) {
+      console.error("[Export] fetch failed:", e);
+      alert("Export failed: could not reach server.\n" + e.message);
+      return;
+    }
   }
 
   if (!s) { alert("Detail data not available for this class."); return; }
 
-  const wb = XLSX.utils.book_new();
-  const safeName = (className || classId).replace(/[:\\/?*[\]]/g, "_").slice(0, 28);
+  try {
+    const wb = XLSX.utils.book_new();
+    const safeName = (className || classId).replace(/[:\\/?*[\]]/g, "_").slice(0, 28);
 
-  const students = (s.students || []).map(st => ({
-    "Student Name": st.userName || st.userId || "-",
-    "Joins":        st.joinCount  ?? 0,
-    "Leaves":       st.leaveCount ?? 0,
-  }));
-  if (students.length) {
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(students), "Students");
+    const students = (s.students || []).map(st => ({
+      "Student Name": st.userName || st.userId || "-",
+      "Joins":        st.joinCount  ?? 0,
+      "Leaves":       st.leaveCount ?? 0,
+    }));
+    if (students.length) {
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(students), "Students");
+    }
+
+    const activity = (s.participantActivity || []).map(it => ({
+      "Name":           it.name       || "-",
+      "Moderator":      it.moderator  ? "Yes" : "No",
+      "Activity Score": it.activityScore ?? 0,
+      "Talk Time":      it.talkTime   || "-",
+      "Webcam Time":    it.webcamTime || "-",
+      "Messages":       it.messages   ?? 0,
+      "Reactions":      it.reactions  ?? 0,
+      "Poll Votes":     it.pollVotes  ?? 0,
+      "Raise Hands":    it.raiseHands ?? 0,
+      "Joined":         it.joinAt  ? new Date(it.joinAt).toLocaleString("en-CA")  : "-",
+      "Left":           it.leftAt  ? new Date(it.leftAt).toLocaleString("en-CA")  : "-",
+      "Duration":       it.duration   || "-",
+    }));
+    if (activity.length) {
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(activity), "Room Activity");
+    }
+
+    if (!students.length && !activity.length) {
+      alert("No student or activity data found for this class.");
+      return;
+    }
+
+    XLSX.writeFile(wb, `class_${safeName}_${getTodayDate()}.xlsx`);
+  } catch (e) {
+    console.error("[Export] XLSX error:", e);
+    alert("Export failed: " + e.message);
   }
-
-  const activity = (s.participantActivity || []).map(it => ({
-    "Name":           it.name       || "-",
-    "Moderator":      it.moderator  ? "Yes" : "No",
-    "Activity Score": it.activityScore ?? 0,
-    "Talk Time":      it.talkTime   || "-",
-    "Webcam Time":    it.webcamTime || "-",
-    "Messages":       it.messages   ?? 0,
-    "Reactions":      it.reactions  ?? 0,
-    "Poll Votes":     it.pollVotes  ?? 0,
-    "Raise Hands":    it.raiseHands ?? 0,
-    "Joined":         it.joinAt  ? new Date(it.joinAt).toLocaleString("en-CA")  : "-",
-    "Left":           it.leftAt  ? new Date(it.leftAt).toLocaleString("en-CA")  : "-",
-    "Duration":       it.duration   || "-",
-  }));
-  if (activity.length) {
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(activity), "Room Activity");
-  }
-
-  if (!students.length && !activity.length) { alert("No detail data found for this class."); return; }
-
-  XLSX.writeFile(wb, `class_${safeName}_${getTodayDate()}.xlsx`);
 }
 
 function exportClassesExcel() {
@@ -815,7 +834,14 @@ function bindClassFilterInteractions() {
     b.onclick = () => { const pg=parseInt(b.dataset.page,10); if(pg>=1){ classFilterState.page=pg; performClassesFilter(); } };
   });
   document.querySelectorAll(".cls-detail-export-btn").forEach(b => {
-    b.onclick = () => exportClassDetailExcel(b.dataset.classId, b.dataset.className);
+    b.onclick = () => {
+      const cid  = b.getAttribute("data-class-id");
+      const cname = b.getAttribute("data-class-name");
+      exportClassDetailExcel(cid, cname).catch(e => {
+        console.error("[Export] unhandled error:", e);
+        alert("Export error: " + e.message);
+      });
+    };
   });
 }
 
