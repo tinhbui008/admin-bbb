@@ -658,7 +658,7 @@ function renderClassesTable(data) {
     </div>`;
 
   const escAttr = v => String(v||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;");
-  const exportBtn = (id, name) => `<button class="nh-btn-ghost cls-detail-export-btn" data-class-id="${escAttr(id)}" data-class-name="${escAttr(name||id)}" style="height:28px;padding:0 10px;font-size:11.5px;color:var(--emerald);border-color:var(--emerald);gap:5px;">
+  const exportBtn = (id, name) => `<button class="nh-btn-ghost cls-detail-export-btn" data-export-class-id="${escAttr(id)}" data-export-class-name="${escAttr(name||id)}" style="height:28px;padding:0 10px;font-size:11.5px;color:var(--emerald);border-color:var(--emerald);gap:5px;">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Detail
     </button>`;
@@ -835,8 +835,8 @@ function bindClassFilterInteractions() {
   });
   document.querySelectorAll(".cls-detail-export-btn").forEach(b => {
     b.onclick = () => {
-      const cid  = b.getAttribute("data-class-id");
-      const cname = b.getAttribute("data-class-name");
+      const cid  = b.getAttribute("data-export-class-id");
+      const cname = b.getAttribute("data-export-class-name");
       exportClassDetailExcel(cid, cname).catch(e => {
         console.error("[Export] unhandled error:", e);
         alert("Export error: " + e.message);

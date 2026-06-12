@@ -134,11 +134,27 @@ async function handleSse(req, res) {
     "Access-Control-Allow-Origin": "*"
   });
 
-  const stats = await buildStats();
-  res.write(`event: stats\ndata: ${JSON.stringify(stats)}\n\n`);
+  // Send initial newline to flush headers through nginx immediately
+  res.write(":\n\n");
+
+  try {
+    const stats = await buildStats();
+    res.write(`event: stats\ndata: ${JSON.stringify(stats)}\n\n`);
+  } catch (e) {
+    console.error("SSE initial buildStats failed:", e.message);
+  }
+
   sseClients.add(res);
 
+  // Heartbeat every 25s to prevent nginx proxy_read_timeout (default 60s)
+  const heartbeat = setInterval(() => {
+    if (!res.writableEnded) {
+      res.write(": ping\n\n");
+    }
+  }, 25000);
+
   req.on("close", () => {
+    clearInterval(heartbeat);
     sseClients.delete(res);
   });
 }
