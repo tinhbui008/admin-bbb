@@ -746,38 +746,27 @@ async function exportClassDetailExcel(classId, className) {
     const wb = XLSX.utils.book_new();
     const safeName = (className || classId).replace(/[:\\/?*[\]]/g, "_").slice(0, 28);
 
-    const students = (s.students || []).map(st => ({
-      "Student Name": st.userName || st.userId || "-",
-      "Joins":        st.joinCount  ?? 0,
-      "Leaves":       st.leaveCount ?? 0,
-    }));
-    if (students.length) {
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(students), "Students");
-    }
-
     const activity = (s.participantActivity || []).map(it => ({
-      "Name":           it.name       || "-",
-      "Moderator":      it.moderator  ? "Yes" : "No",
-      "Activity Score": it.activityScore ?? 0,
-      "Talk Time":      it.talkTime   || "-",
-      "Webcam Time":    it.webcamTime || "-",
-      "Messages":       it.messages   ?? 0,
-      "Reactions":      it.reactions  ?? 0,
-      "Poll Votes":     it.pollVotes  ?? 0,
-      "Raise Hands":    it.raiseHands ?? 0,
-      "Joined":         it.joinAt  ? new Date(it.joinAt).toLocaleString("en-CA")  : "-",
-      "Left":           it.leftAt  ? new Date(it.leftAt).toLocaleString("en-CA")  : "-",
-      "Duration":       it.duration   || "-",
+      "Name":   it.name      || "-",
+      "Mod":    it.moderator ? "Yes" : "No",
+      "Score":  it.activityScore ?? 0,
+      "Talk":   it.talkTime  || "-",
+      "Webcam": it.webcamTime|| "-",
+      "Msgs":   it.messages  ?? 0,
+      "React":  it.reactions ?? 0,
+      "Polls":  it.pollVotes ?? 0,
+      "Hands":  it.raiseHands?? 0,
+      "Joined": it.joinAt ? new Date(it.joinAt).toLocaleString("en-CA") : "-",
+      "Left":   it.leftAt ? new Date(it.leftAt).toLocaleString("en-CA") : "-",
+      "Dur":    it.duration  || "-",
     }));
-    if (activity.length) {
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(activity), "Room Activity");
-    }
 
-    if (!students.length && !activity.length) {
-      alert("No student or activity data found for this class.");
+    if (!activity.length) {
+      alert("No activity data found for this class.");
       return;
     }
 
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(activity), "Room Activity");
     XLSX.writeFile(wb, `class_${safeName}_${getTodayDate()}.xlsx`);
   } catch (e) {
     console.error("[Export] XLSX error:", e);
