@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nihaoma — BBB Admin</title>
+  <!-- <title>Nihaoma — BBB Admin</title> -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -300,13 +300,13 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="nh-logo-name">Nihaoma</span>
-          <span class="nh-logo-tag">BBB Admin</span>
+          <!-- <span class="nh-logo-tag">BBB Admin</span> -->
         </div>
-        <div class="nh-logo-sub">Real-time BigBlueButton analytics</div>
+        <!-- <div class="nh-logo-sub">Real-time BigBlueButton analytics</div> -->
       </div>
     </div>
 
-    <div class="nh-badges">
+    <!-- <div class="nh-badges">
       <span class="nh-badge nh-badge-g"><span class="nh-pulse-dot"></span>BBB Connected</span>
       <span class="nh-badge nh-badge-i">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
@@ -316,7 +316,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
         Live Sync
       </span>
-    </div>
+    </div> -->
 
     <div class="nh-spacer"></div>
 
@@ -462,7 +462,7 @@ const historyState = {
 };
 
 const classFilterState = {
-  search: "", dateFrom: "", dateTo: "",
+  search: "", dateFrom: getTodayDate(), dateTo: getTodayDate(),
   page: 1, results: null, loading: false
 };
 
