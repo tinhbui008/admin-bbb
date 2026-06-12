@@ -705,6 +705,8 @@ async function performClassesFilter() {
     classFilterState.results = { data:[], pagination:{page:1,limit:20,total:0,totalPages:0} };
   }
   classFilterState.loading = false;
+  const first = classFilterState.results.data[0];
+  if (first) state.selectedClassId = first.classId;
   renderCurrentView();
 }
 
