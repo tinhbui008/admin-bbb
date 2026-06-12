@@ -1,2028 +1,1058 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nihaoma BBB Dashboard</title>
-    <style>
-      :root {
-        --bg: #fbf4f5;
-        --bg-2: #fff7f8;
-        --card: rgba(255, 255, 255, 0.96);
-        --card-2: #fdf8f9;
-        --text: #1b1417;
-        --text-2: #6f6266;
-        --text-3: #a99ea2;
-        --brand: #f1222d;
-        --brand-2: #c70d18;
-        --brand-soft: #fdecec;
-        --border: #f0e4e6;
-        --grid: rgba(20, 10, 12, 0.06);
-        --emerald: #0f9d6e;
-        --emerald-soft: #e6f7f0;
-        --indigo: #4f46e5;
-        --indigo-soft: #eef0fe;
-        --amber: #d97706;
-        --amber-soft: #fdf2e3;
-        --shadow: 0 24px 60px rgba(32, 16, 20, 0.08);
-        --radius-lg: 18px;
-        --radius-md: 14px;
-        --radius-sm: 10px;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: Inter, "Segoe UI", Arial, sans-serif;
-        color: var(--text);
-        background:
-          radial-gradient(circle at top left, rgba(241, 34, 45, 0.11), transparent 24%),
-          radial-gradient(circle at 85% 8%, rgba(79, 70, 229, 0.06), transparent 20%),
-          linear-gradient(180deg, var(--bg) 0%, #fffdfd 100%);
-      }
-
-      button,
-      input,
-      select {
-        font: inherit;
-      }
-
-      h1,
-      h2,
-      h3,
-      p {
-        margin: 0;
-      }
-
-      .page {
-        min-height: 100vh;
-      }
-
-      .header {
-        position: sticky;
-        top: 0;
-        z-index: 30;
-        backdrop-filter: blur(10px) saturate(140%);
-        background: rgba(255, 247, 248, 0.88);
-        border-bottom: 1px solid var(--border);
-      }
-
-      .header-inner,
-      .main {
-        max-width: 1440px;
-        margin: 0 auto;
-        padding-left: 28px;
-        padding-right: 28px;
-      }
-
-      .header-inner {
-        padding-top: 14px;
-        padding-bottom: 14px;
-        display: flex;
-        align-items: center;
-        gap: 18px;
-      }
-
-      .brand-logo {
-        display: block;
-        height: 46px;
-        width: auto;
-        object-fit: contain;
-      }
-
-      .status-row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 10px;
-        border-radius: 9px;
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .status-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-      }
-
-      .status-success {
-        color: var(--emerald);
-        background: var(--emerald-soft);
-      }
-
-      .status-success .status-dot {
-        background: var(--emerald);
-      }
-
-      .status-info {
-        color: var(--indigo);
-        background: var(--indigo-soft);
-      }
-
-      .status-neutral {
-        color: var(--text-2);
-        background: var(--card);
-        border: 1px solid var(--border);
-      }
-
-      .header-spacer {
-        flex: 1;
-      }
-
-      .header-actions {
-        display: flex;
-        gap: 10px;
-      }
-
-      .button,
-      .button-muted {
-        height: 38px;
-        padding: 0 14px;
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 700;
-      }
-
-      .button {
-        border: 0;
-        color: white;
-        background: linear-gradient(150deg, var(--brand), var(--brand-2));
-        box-shadow: 0 10px 24px rgba(241, 34, 45, 0.25);
-      }
-
-      .button-muted {
-        border: 1px solid var(--border);
-        background: var(--card);
-        color: var(--text-2);
-      }
-
-      .main {
-        padding-top: 26px;
-        padding-bottom: 48px;
-      }
-
-      .hero-grid,
-      .mini-grid {
-        display: grid;
-        gap: 16px;
-      }
-
-      .hero-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
-
-      .mini-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        margin-top: 16px;
-      }
-
-      .shell {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 320px;
-        gap: 16px;
-        align-items: start;
-        margin-top: 16px;
-      }
-
-      .stack {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        min-width: 0;
-      }
-
-      .card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow);
-      }
-
-      .card-pad {
-        padding: 18px 20px;
-      }
-
-      .metric-orb,
-      .metric-card {
-        position: relative;
-        overflow: hidden;
-      }
-
-      .metric-orb::after {
-        content: "";
-        position: absolute;
-        top: -16px;
-        right: -16px;
-        width: 84px;
-        height: 84px;
-        border-radius: 50%;
-        background: var(--orb, var(--brand-soft));
-      }
-
-      .metric-orb .icon {
-        position: relative;
-        z-index: 1;
-        width: 30px;
-        height: 30px;
-        border-radius: 9px;
-        display: grid;
-        place-items: center;
-        color: var(--icon, var(--brand));
-        background: var(--icon-bg, var(--brand-soft));
-      }
-
-      .metric-label {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        color: var(--text-2);
-        font-size: 12.5px;
-        font-weight: 700;
-      }
-
-      .metric-value {
-        position: relative;
-        z-index: 1;
-        margin-top: 12px;
-        font-size: 32px;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-      }
-
-      .metric-hint {
-        position: relative;
-        z-index: 1;
-        margin-top: 4px;
-        color: var(--text-3);
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      .metric-card .metric-value {
-        margin-top: 7px;
-        font-size: 25px;
-      }
-
-      .section-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 14px;
-      }
-
-      .section-title {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-      }
-
-      .section-title h2,
-      .section-title h3 {
-        font-size: 15px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-      }
-
-      .section-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--emerald);
-      }
-
-      .section-note {
-        color: var(--text-3);
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      .live-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .analytics-tabs {
-        display: flex;
-        gap: 7px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-        margin-bottom: 16px;
-      }
-
-      .analytics-tab {
-        border: 1px solid var(--border);
-        background: var(--card-2);
-        color: var(--text-2);
-        border-radius: 999px;
-        padding: 8px 12px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 800;
-        white-space: nowrap;
-      }
-
-      .analytics-tab.active {
-        color: white;
-        border-color: transparent;
-        background: linear-gradient(150deg, var(--brand), var(--brand-2));
-      }
-
-      .chart-note {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 10px;
-        color: var(--text-2);
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .chart-swatch {
-        width: 18px;
-        height: 3px;
-        border-radius: 3px;
-        background: var(--brand);
-      }
-
-      .chart-surface {
-        min-height: 250px;
-      }
-
-      .chart-svg {
-        width: 100%;
-        height: 250px;
-        overflow: visible;
-        display: block;
-      }
-
-      .chart-bars {
-        height: 250px;
-        display: flex;
-        align-items: flex-end;
-        gap: 8px;
-        padding-top: 10px;
-        border-bottom: 1px solid var(--border);
-        background-image: repeating-linear-gradient(to top, transparent, transparent 49px, var(--grid) 49px, var(--grid) 50px);
-      }
-
-      .chart-bar-col {
-        flex: 1;
-        min-width: 0;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 6px;
-      }
-
-      .chart-bar {
-        width: 100%;
-        max-width: 34px;
-        border-radius: 6px 6px 0 0;
-        opacity: 0.92;
-      }
-
-      .chart-bar-label {
-        color: var(--text-3);
-        font-size: 10px;
-        font-weight: 700;
-      }
-
-      .chart-hbars {
-        display: flex;
-        flex-direction: column;
-        gap: 13px;
-        padding: 6px 2px;
-      }
-
-      .chart-hbar-track {
-        height: 9px;
-        border-radius: 6px;
-        background: var(--card-2);
-        overflow: hidden;
-      }
-
-      .chart-hbar-fill {
-        height: 100%;
-        border-radius: 6px;
-      }
-
-      .chart-hbar-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 5px;
-        gap: 12px;
-      }
-
-      .chart-hbar-head strong {
-        font-size: 12.5px;
-        font-weight: 700;
-      }
-
-      .chart-hbar-head span {
-        color: var(--text-3);
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .chart-donut-wrap {
-        display: flex;
-        align-items: center;
-        gap: 28px;
-        padding: 14px 6px 6px;
-      }
-
-      .chart-donut {
-        position: relative;
-        width: 184px;
-        height: 184px;
-        flex-shrink: 0;
-        border-radius: 50%;
-      }
-
-      .chart-donut-hole {
-        position: absolute;
-        inset: 26px;
-        border-radius: 50%;
-        background: var(--card);
-        display: grid;
-        place-items: center;
-        box-shadow: inset 0 0 0 1px var(--border);
-      }
-
-      .chart-donut-total strong {
-        display: block;
-        font-size: 26px;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-        text-align: center;
-      }
-
-      .chart-donut-total span {
-        color: var(--text-3);
-        font-size: 11px;
-        font-weight: 700;
-      }
-
-      .chart-legend {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        flex: 1;
-      }
-
-      .chart-legend-row {
-        display: flex;
-        align-items: center;
-        gap: 11px;
-      }
-
-      .chart-legend-dot {
-        width: 11px;
-        height: 11px;
-        border-radius: 4px;
-        flex-shrink: 0;
-      }
-
-      .chart-legend-row strong {
-        flex: 1;
-        font-size: 13px;
-      }
-
-      .chart-legend-row span {
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .live-room {
-        padding: 14px 15px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        border-left: 3px solid var(--room-color, var(--brand));
-        background: var(--card-2);
-      }
-
-      .live-top,
-      .row-between {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-      }
-
-      .live-name {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-      }
-
-      .live-name strong,
-      .ellipsis {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .tiny-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 3px 8px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 800;
-      }
-
-      .tiny-live {
-        color: var(--emerald);
-        background: var(--emerald-soft);
-      }
-
-      .mono {
-        font-family: "JetBrains Mono", Consolas, monospace;
-      }
-
-      .muted {
-        color: var(--text-3);
-      }
-
-      .live-sub {
-        margin: 5px 0 11px;
-        color: var(--text-3);
-        font-size: 11px;
-      }
-
-      .live-meta {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-        color: var(--text-2);
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .chips {
-        display: flex;
-        gap: 7px;
-        flex-wrap: wrap;
-      }
-
-      .chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 11px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--card-2);
-        color: var(--text-2);
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .chip.active {
-        border-color: transparent;
-        color: white;
-        background: linear-gradient(150deg, var(--brand), var(--brand-2));
-      }
-
-      .tab-row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 16px;
-      }
-
-      .tab-button {
-        padding: 9px 14px;
-        border-radius: 999px;
-        border: 1px solid transparent;
-        background: var(--card-2);
-        color: var(--text-2);
-        cursor: pointer;
-        font-size: 12.5px;
-        font-weight: 800;
-      }
-
-      .tab-button.active {
-        color: white;
-        background: linear-gradient(150deg, var(--brand), var(--brand-2));
-      }
-
-      .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px;
-      }
-
-      .detail-hero {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 16px;
-      }
-
-      .detail-id {
-        margin-top: 4px;
-        color: var(--text-3);
-        font-size: 12px;
-      }
-
-      .detail-title {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .detail-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        display: grid;
-        place-items: center;
-      }
-
-      .detail-name {
-        font-size: 18px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-      }
-
-      .summary-stat {
-        text-align: center;
-      }
-
-      .summary-stat strong {
-        display: block;
-        font-size: 19px;
-        font-weight: 800;
-      }
-
-      .summary-stat span {
-        color: var(--text-3);
-        font-size: 10.5px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-
-      .detail-box {
-        padding: 13px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: var(--card-2);
-      }
-
-      .detail-box h3 {
-        font-size: 12px;
-        font-weight: 800;
-        margin-bottom: 11px;
-      }
-
-      .list {
-        display: flex;
-        flex-direction: column;
-        gap: 9px;
-      }
-
-      .list-item {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-      }
-
-      .avatar {
-        width: 28px;
-        height: 28px;
-        border-radius: 9px;
-        display: grid;
-        place-items: center;
-        font-size: 11px;
-        font-weight: 800;
-        flex-shrink: 0;
-      }
-
-      .list-item strong {
-        display: block;
-        font-size: 12.5px;
-      }
-
-      .list-item span {
-        color: var(--text-3);
-        font-size: 10.5px;
-      }
-
-      .history-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 14px;
-        flex-wrap: wrap;
-      }
-
-      .history-tools {
-        display: flex;
-        gap: 9px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-
-      .search {
-        height: 36px;
-        width: 220px;
-        padding: 0 12px;
-        border-radius: 9px;
-        border: 1px solid var(--border);
-        background: var(--card-2);
-        color: var(--text);
-        outline: none;
-      }
-
-      .search:focus,
-      .filter-select:focus {
-        border-color: var(--brand);
-        background: white;
-      }
-
-      .filter-select {
-        height: 36px;
-        min-width: 140px;
-        padding: 0 12px;
-        border-radius: 9px;
-        border: 1px solid var(--border);
-        background: var(--card);
-        color: var(--text-2);
-        outline: none;
-      }
-
-      .table-wrap {
-        overflow: auto;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-      }
-
-      th,
-      td {
-        padding: 11px 14px;
-        border-bottom: 1px solid var(--border);
-        white-space: nowrap;
-        text-align: left;
-      }
-
-      th {
-        background: var(--card-2);
-        color: var(--text-3);
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-
-      tbody tr:nth-child(even) {
-        background: rgba(253, 248, 249, 0.72);
-      }
-
-      tbody tr:last-child td {
-        border-bottom: 0;
-      }
-
-      .link-button {
-        padding: 0;
-        border: 0;
-        background: none;
-        color: var(--text);
-        cursor: pointer;
-        font-weight: 700;
-      }
-
-      .link-button:hover {
-        color: var(--brand);
-      }
-
-      .sidebar {
-        position: sticky;
-        top: 84px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-
-      .rank-list {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .rank-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 6px;
-        border-radius: 9px;
-      }
-
-      .rank-item:hover {
-        background: var(--card-2);
-      }
-
-      .rank {
-        width: 22px;
-        text-align: center;
-        color: var(--text-3);
-        font-size: 12px;
-        font-weight: 800;
-        flex-shrink: 0;
-      }
-
-      .rank-main {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .rank-main strong {
-        display: block;
-        font-size: 12.5px;
-        font-weight: 700;
-      }
-
-      .rank-main span {
-        display: block;
-        color: var(--text-3);
-        font-size: 10.5px;
-      }
-
-      .rank-value {
-        font-size: 13px;
-        font-weight: 800;
-        flex-shrink: 0;
-      }
-
-      .empty {
-        padding: 28px;
-        text-align: center;
-        color: var(--text-3);
-        font-size: 13px;
-      }
-
-      @media (max-width: 1280px) {
-        .hero-grid,
-        .mini-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .live-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .chart-donut-wrap {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-      }
-
-      @media (max-width: 1080px) {
-        .shell {
-          grid-template-columns: 1fr;
-        }
-
-        .sidebar {
-          position: static;
-        }
-
-        .detail-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      @media (max-width: 720px) {
-        .header-inner,
-        .main {
-          padding-left: 16px;
-          padding-right: 16px;
-        }
-
-        .header-inner {
-          flex-wrap: wrap;
-        }
-
-        .header-spacer {
-          display: none;
-        }
-
-        .hero-grid,
-        .mini-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .history-tools {
-          width: 100%;
-        }
-
-        .search,
-        .filter-select {
-          width: 100%;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="page">
-      <header class="header">
-        <div class="header-inner">
-          <img class="brand-logo" src="https://class.nihaoma-mandarin.com/assets/bbb_logo-176f5d8146a2dc0605ec62f28bdaf3c2addce6747143ca19de1f8e85134f020f.png" alt="Nihaoma logo" />
-
-          <div class="status-row" id="statusRow"></div>
-
-          <div class="header-spacer"></div>
-
-          <div class="header-actions">
-            <button class="button-muted" id="refreshButton">Refresh</button>
-            <button class="button" id="resetButton">Reset Data</button>
-          </div>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nihaoma — BBB Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    /* ===== TOKENS ===== */
+    :root {
+      --bg: #fbf4f5;
+      --bg2: #fff7f8;
+      --card: #ffffff;
+      --card2: #fdf8f9;
+      --text: #1b1417;
+      --text2: #6f6266;
+      --text3: #a99ea2;
+      --border: #f0e4e6;
+      --border2: #f7edef;
+      --shadow: 0 1px 3px rgba(20,10,12,.06);
+      --brand: #f1222d;
+      --brand2: #c70d18;
+      --brandSoft: #fdecec;
+      --emerald: #0f9d6e;
+      --emeraldSoft: #e6f7f0;
+      --indigo: #4f46e5;
+      --indigoSoft: #eef0fe;
+      --amber: #d97706;
+      --amberSoft: #fdf2e3;
+      --slate: #475569;
+      --slateSoft: #eef1f5;
+    }
+
+    [data-theme="dark"] {
+      --bg: #100b0c;
+      --bg2: #1a1113;
+      --card: #1e1416;
+      --card2: #241819;
+      --text: #f5eff0;
+      --text2: #a99ea2;
+      --text3: #6f6266;
+      --border: #2e1e21;
+      --border2: #281c1e;
+      --shadow: 0 1px 3px rgba(0,0,0,.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 60px;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+    button, input, select { font: inherit; }
+
+    @keyframes nh-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(15,157,110,.55); }
+      70%  { box-shadow: 0 0 0 7px rgba(15,157,110,0); }
+      100% { box-shadow: 0 0 0 0 rgba(15,157,110,0); }
+    }
+    @keyframes nh-rise {
+      from { opacity:0; transform:translateY(7px); }
+      to   { opacity:1; transform:none; }
+    }
+
+    ::-webkit-scrollbar { width:8px; height:8px; }
+    ::-webkit-scrollbar-thumb { background:rgba(130,120,124,.3); border-radius:8px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+
+    /* ===== HEADER ===== */
+    .nh-header {
+      position: sticky; top: 0; z-index: 40;
+      background: rgba(255,247,248,.88);
+      backdrop-filter: saturate(140%) blur(12px);
+      -webkit-backdrop-filter: saturate(140%) blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    [data-theme="dark"] .nh-header { background: rgba(26,17,19,.88); }
+    .nh-header-inner {
+      max-width: 1440px; margin: 0 auto;
+      padding: 13px 28px;
+      display: flex; align-items: center; gap: 18px;
+    }
+    .nh-logo { display:flex; align-items:center; gap:11px; }
+    .nh-logo-box {
+      width:40px; height:40px; border-radius:12px; flex-shrink:0;
+      background: linear-gradient(150deg, var(--brand), var(--brand2));
+      display:grid; place-items:center;
+      box-shadow: 0 4px 14px -3px rgba(241,34,45,.45);
+    }
+    .nh-logo-name { font-size:19px; font-weight:800; letter-spacing:-.4px; }
+    .nh-logo-tag {
+      font-size:10px; font-weight:700; letter-spacing:.5px;
+      color:var(--brand); background:var(--brandSoft);
+      padding:2px 7px; border-radius:5px; text-transform:uppercase;
+    }
+    .nh-logo-sub { font-size:11px; color:var(--text3); font-weight:500; margin-top:1px; }
+
+    .nh-badges { display:flex; align-items:center; gap:7px; margin-left:10px; }
+    .nh-badge {
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:11.5px; font-weight:600;
+      padding:4px 10px; border-radius:8px;
+    }
+    .nh-badge-g { color:var(--emerald); background:var(--emeraldSoft); }
+    .nh-badge-i { color:var(--indigo);  background:var(--indigoSoft); }
+    .nh-badge-n { color:var(--text2); background:var(--card); border:1px solid var(--border); }
+    .nh-pulse-dot {
+      width:7px; height:7px; border-radius:50%;
+      background:var(--emerald); flex-shrink:0;
+      animation: nh-pulse 2s infinite;
+    }
+    .nh-spacer { flex:1; }
+
+    .nh-btn-icon {
+      width:38px; height:38px; border-radius:10px;
+      border:1px solid var(--border); background:var(--card);
+      color:var(--text2); display:grid; place-items:center;
+      cursor:pointer; transition:background .15s, color .15s;
+    }
+    .nh-btn-icon:hover { background:var(--card2); color:var(--text); }
+    .nh-btn-ghost {
+      display:inline-flex; align-items:center; gap:7px;
+      height:38px; padding:0 14px; border-radius:10px;
+      border:1px solid var(--border); background:var(--card);
+      color:var(--text2); font-size:13px; font-weight:600;
+      cursor:pointer; transition:background .15s, color .15s;
+    }
+    .nh-btn-ghost:hover { background:var(--card2); color:var(--text); }
+    .nh-btn-primary {
+      display:inline-flex; align-items:center; gap:7px;
+      height:38px; padding:0 16px; border-radius:10px;
+      border:none; background:linear-gradient(150deg, var(--brand), var(--brand2));
+      color:#fff; font-size:13px; font-weight:700;
+      cursor:pointer; box-shadow:0 3px 10px -2px rgba(241,34,45,.45);
+      transition:filter .15s;
+    }
+    .nh-btn-primary:hover { filter:brightness(1.07); }
+
+    /* ===== MAIN ===== */
+    .nh-main { max-width:1440px; margin:0 auto; padding:24px 28px 0; }
+
+    /* ===== HERO ORBS ===== */
+    .nh-hero { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:14px; }
+    .nh-orb {
+      position:relative; overflow:hidden;
+      background:var(--card); border:1px solid var(--border);
+      border-radius:16px; padding:18px 20px; box-shadow:var(--shadow);
+    }
+    .nh-orb-blob { position:absolute; right:-16px; top:-16px; width:84px; height:84px; border-radius:50%; }
+    .nh-orb-top { display:flex; align-items:center; gap:9px; position:relative; }
+    .nh-orb-icon { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; flex-shrink:0; }
+    .nh-orb-label { font-size:12.5px; font-weight:600; color:var(--text2); }
+    .nh-orb-value { font-size:32px; font-weight:800; letter-spacing:-1px; margin-top:11px; position:relative; }
+    .nh-orb-trend { display:flex; align-items:center; gap:5px; margin-top:4px; font-size:12px; font-weight:600; position:relative; }
+
+    /* ===== SHELL ===== */
+    .nh-shell { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:14px; align-items:start; }
+    .nh-col { display:flex; flex-direction:column; gap:14px; min-width:0; }
+
+    /* ===== SUMMARY STRIP ===== */
+    .nh-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+    .nh-stat { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow); }
+    .nh-stat-row { display:flex; align-items:center; gap:8px; }
+    .nh-stat-lbl { font-size:11.5px; font-weight:600; color:var(--text2); }
+    .nh-stat-val { font-size:25px; font-weight:800; letter-spacing:-.6px; margin-top:7px; }
+
+    /* ===== CARD ===== */
+    .nh-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 20px; box-shadow:var(--shadow); }
+    .nh-card-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .nh-card-title { display:flex; align-items:center; gap:9px; font-size:15px; font-weight:700; letter-spacing:-.2px; }
+    .nh-card-icon { width:28px; height:28px; border-radius:8px; background:var(--brandSoft); color:var(--brand); display:grid; place-items:center; flex-shrink:0; }
+    .nh-live-badge { font-size:11px; font-weight:700; color:var(--emerald); background:var(--emeraldSoft); padding:2px 8px; border-radius:20px; }
+
+    /* ===== LIVE ROOMS ===== */
+    .nh-rooms { display:grid; grid-template-columns:repeat(2,1fr); gap:11px; }
+    .nh-room { border:1px solid var(--border); border-radius:12px; padding:13px 15px; background:var(--card2); animation:nh-rise .3s ease both; }
+    .nh-room-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .nh-room-name-grp { display:flex; align-items:center; gap:8px; min-width:0; }
+    .nh-room-dot { width:7px; height:7px; border-radius:50%; background:var(--emerald); flex-shrink:0; animation:nh-pulse 2s infinite; }
+    .nh-room-name { font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .nh-room-pill { font-size:10px; font-weight:700; padding:2px 7px; border-radius:5px; white-space:nowrap; }
+    .nh-room-sub { font-size:11px; color:var(--text3); margin:4px 0 11px; font-family:'JetBrains Mono', monospace; }
+    .nh-room-stats { display:flex; align-items:center; gap:15px; }
+    .nh-room-stat { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:var(--text2); }
+
+    /* ===== CHART TABS ===== */
+    .nh-chart-tabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; margin-bottom:15px; }
+    .nh-ctab {
+      height:31px; padding:0 13px; border-radius:8px;
+      border:1px solid var(--border); background:var(--card);
+      color:var(--text2); font-size:12.5px; font-weight:600;
+      cursor:pointer; white-space:nowrap;
+      transition:background .12s, color .12s, border-color .12s;
+    }
+    .nh-ctab.active { background:var(--text); color:var(--card); border-color:var(--text); }
+    .nh-cpane { display:none; }
+    .nh-cpane.active { display:block; }
+    .nh-cwrap { position:relative; height:260px; }
+    .nh-cwrap.sm { height:220px; }
+
+    /* ===== EXPLORE TABS ===== */
+    .nh-etabs { display:flex; gap:6px; margin-bottom:15px; }
+    .nh-etab {
+      height:34px; padding:0 14px; border-radius:8px;
+      border:1px solid var(--border); background:var(--card);
+      color:var(--text2); font-size:13px; font-weight:600;
+      cursor:pointer; transition:background .12s, color .12s, border-color .12s;
+    }
+    .nh-etab.active { background:var(--text); color:var(--card); border-color:var(--text); }
+
+    /* ===== TABLE ===== */
+    .nh-tbl-wrap { border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    .nh-tbl { width:100%; border-collapse:collapse; font-size:13px; }
+    .nh-tbl thead tr { background:var(--card2); }
+    .nh-tbl th { text-align:left; padding:10px 14px; font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .nh-tbl td { padding:11px 14px; border-bottom:1px solid var(--border2); vertical-align:middle; }
+    .nh-tbl tbody tr:last-child td { border-bottom:none; }
+    .nh-tbl tbody tr:hover { background:var(--card2); }
+    .nh-tlink { border:none; background:none; padding:0; color:var(--brand); font-weight:700; font-size:13px; cursor:pointer; text-align:left; font-family:inherit; }
+    .nh-tlink:hover { text-decoration:underline; }
+    .nh-muted { color:var(--text2); }
+    .nh-mono { font-family:'JetBrains Mono',monospace; font-size:11px; }
+
+    /* ===== DETAIL PANEL ===== */
+    .nh-detail { background:var(--card2); border:1px solid var(--border); border-radius:14px; padding:18px; margin-top:14px; }
+    .nh-detail-hdr { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:15px; }
+    .nh-detail-title { font-size:20px; font-weight:800; letter-spacing:-.3px; }
+    .nh-detail-sub { font-size:12px; color:var(--text3); margin-top:3px; }
+    .nh-detail-pill { display:inline-flex; align-items:center; padding:4px 12px; border-radius:20px; background:var(--brandSoft); color:var(--brand); font-size:12px; font-weight:700; white-space:nowrap; }
+    .nh-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-bottom:15px; }
+    .nh-metric { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:11px 14px; text-align:center; }
+    .nh-metric-lbl { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.4px; }
+    .nh-metric-val { font-size:20px; font-weight:800; margin-top:4px; }
+    .nh-list-hdr { font-size:13px; font-weight:700; margin-bottom:9px; margin-top:13px; }
+    .nh-list-item { display:flex; align-items:flex-start; gap:9px; padding:9px 11px; border-radius:9px; background:var(--card); border:1px solid var(--border); margin-bottom:6px; }
+    .nh-avatar { width:28px; height:28px; border-radius:8px; display:grid; place-items:center; font-size:11px; font-weight:800; flex-shrink:0; }
+    .nh-empty { padding:28px; text-align:center; color:var(--text3); }
+    .nh-empty h3 { margin-top:8px; font-size:15px; color:var(--text2); }
+    .nh-empty p  { font-size:12.5px; margin-top:5px; }
+
+    /* ===== HISTORY ===== */
+    .nh-hist-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:11px; align-items:center; }
+    .nh-hist-sel, .nh-hist-inp { height:36px; padding:0 12px; border-radius:9px; border:1px solid var(--border); background:var(--card2); color:var(--text); font-size:13px; }
+    .nh-hist-sel:focus, .nh-hist-inp:focus { outline:none; border-color:var(--brand); background:var(--card); }
+    .nh-srch-wrap { position:relative; display:flex; align-items:center; }
+    .nh-srch-ico { position:absolute; left:10px; color:var(--text3); pointer-events:none; display:flex; align-items:center; }
+    .nh-srch-inp { height:36px; width:200px; padding:0 12px 0 34px; border-radius:9px; border:1px solid var(--border); background:var(--card2); color:var(--text); font-size:13px; }
+    .nh-srch-inp:focus { outline:none; border-color:var(--brand); background:var(--card); }
+    .nh-pgn { display:flex; align-items:center; justify-content:space-between; margin-top:12px; font-size:12px; color:var(--text3); }
+    .nh-pgn-btn { height:31px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text2); font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; }
+    .nh-pgn-btn:disabled { opacity:.45; cursor:not-allowed; }
+    .nh-pgn-btn:not(:disabled):hover { color:var(--text); background:var(--card2); }
+
+    /* ===== STATUS ===== */
+    .nh-s-live { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:var(--emerald); background:var(--emeraldSoft); padding:2px 9px; border-radius:20px; }
+    .nh-s-live span { width:6px; height:6px; border-radius:50%; background:var(--emerald); animation:nh-pulse 2s infinite; }
+    .nh-chip { display:inline-flex; align-items:center; padding:2px 9px; border-radius:20px; background:var(--slateSoft); color:var(--slate); font-size:11px; font-weight:700; }
+
+    /* ===== SIDEBAR ===== */
+    .nh-sidebar { display:flex; flex-direction:column; gap:14px; position:sticky; top:76px; }
+    .nh-lb-hdr { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+    .nh-lb-ico { width:26px; height:26px; border-radius:8px; display:grid; place-items:center; flex-shrink:0; }
+    .nh-lb-title { margin:0; font-size:13.5px; font-weight:700; }
+    .nh-lb-row { display:flex; align-items:center; gap:9px; padding:6px 5px; border-radius:9px; cursor:pointer; }
+    .nh-lb-row:hover { background:var(--card2); }
+    .nh-lb-rank { width:20px; font-size:12px; font-weight:800; color:var(--text3); text-align:center; flex-shrink:0; }
+    .nh-lb-info { min-width:0; flex:1; }
+    .nh-lb-name { font-size:12.5px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .nh-lb-sub  { font-size:10.5px; color:var(--text3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .nh-lb-val  { font-size:13px; font-weight:700; flex-shrink:0; }
+    .nh-lb-av { width:28px; height:28px; border-radius:9px; display:grid; place-items:center; font-size:11px; font-weight:800; flex-shrink:0; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width:1220px) { .nh-shell { grid-template-columns:1fr; } .nh-sidebar { position:static; } }
+    @media (max-width:900px)  { .nh-hero { grid-template-columns:repeat(2,1fr); } .nh-summary { grid-template-columns:repeat(2,1fr); } .nh-rooms { grid-template-columns:1fr; } }
+    @media (max-width:640px)  { .nh-main { padding:14px 14px 0; } .nh-header-inner { padding:11px 14px; } .nh-badges { display:none; } .nh-hero { grid-template-columns:1fr; } .nh-metrics { grid-template-columns:repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+
+<!-- ==================== HEADER ==================== -->
+<header class="nh-header">
+  <div class="nh-header-inner">
+    <div class="nh-logo">
+      <div class="nh-logo-box">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2.6 9 2.6 12 0v-5"/>
+        </svg>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="nh-logo-name">Nihaoma</span>
+          <span class="nh-logo-tag">BBB Admin</span>
         </div>
-      </header>
-
-      <main class="main">
-        <section class="hero-grid" id="heroGrid"></section>
-        <section class="mini-grid" id="miniGrid"></section>
-
-        <div class="shell">
-          <div class="stack">
-            <section class="card card-pad">
-              <div class="section-head">
-                <div class="section-title">
-                  <span class="section-dot"></span>
-                  <h2>Live Active Rooms</h2>
-                  <span class="tiny-pill tiny-live" id="liveBadge">0 live</span>
-                </div>
-                <div class="section-note" id="liveSummary">0 participants now</div>
-              </div>
-              <div class="live-grid" id="liveRooms"></div>
-            </section>
-
-            <!-- <section class="card card-pad">
-              <div class="section-title" style="margin-bottom: 14px;">
-                <div class="detail-icon" style="width: 28px; height: 28px; border-radius: 8px; background: var(--brand-soft); color: var(--brand);">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 3v18h18"></path>
-                    <path d="M7 16v-5"></path>
-                    <path d="M12 16V8"></path>
-                    <path d="M17 16v-3"></path>
-                  </svg>
-                </div>
-                <h2>Analytics</h2>
-              </div>
-              <div class="analytics-tabs" id="analyticsTabs"></div>
-              <div class="chart-surface" id="analyticsContent"></div>
-            </section> -->
-
-            <section class="card card-pad">
-              <div class="tab-row" id="detailTabs"></div>
-              <div id="detailContent"></div>
-            </section>
-
-            <section class="card card-pad">
-              <div class="history-head">
-                <div class="chips" id="historyTabs"></div>
-                <div class="history-tools">
-                  <input class="search" id="searchInput" type="search" placeholder="Search..." />
-                  <select class="filter-select" id="roomFilter"></select>
-                  <select class="filter-select" id="teacherFilter"></select>
-                  <select class="filter-select" id="studentFilter"></select>
-                </div>
-              </div>
-              <div class="table-wrap" id="historyTable"></div>
-            </section>
-          </div>
-
-          <aside class="sidebar">
-            <section class="card card-pad">
-              <div class="section-title" style="margin-bottom: 13px;">
-                <div class="detail-icon" style="width: 26px; height: 26px; border-radius: 8px; background: var(--brand-soft); color: var(--brand);">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 9a6 6 0 0 0 12 0V3H6z"></path>
-                    <path d="M6 4H3v2a3 3 0 0 0 3 3"></path>
-                    <path d="M18 4h3v2a3 3 0 0 1-3 3"></path>
-                    <path d="M9 21h6"></path>
-                    <path d="M12 17v4"></path>
-                  </svg>
-                </div>
-                <h3>Top Classes</h3>
-              </div>
-              <div class="rank-list" id="topClasses"></div>
-            </section>
-
-            <section class="card card-pad">
-              <div class="section-title" style="margin-bottom: 13px;">
-                <div class="detail-icon" style="width: 26px; height: 26px; border-radius: 8px; background: var(--amber-soft); color: var(--amber);">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </div>
-                <h3>Top Teachers</h3>
-              </div>
-              <div class="rank-list" id="topTeachers"></div>
-            </section>
-
-            <section class="card card-pad">
-              <div class="section-title" style="margin-bottom: 13px;">
-                <div class="detail-icon" style="width: 26px; height: 26px; border-radius: 8px; background: var(--emerald-soft); color: var(--emerald);">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                  </svg>
-                </div>
-                <h3>Top Students</h3>
-              </div>
-              <div class="rank-list" id="topStudents"></div>
-            </section>
-          </aside>
-        </div>
-      </main>
+        <div class="nh-logo-sub">Real-time BigBlueButton analytics</div>
+      </div>
     </div>
 
-    <script>
-      let eventSource;
+    <div class="nh-badges">
+      <span class="nh-badge nh-badge-g"><span class="nh-pulse-dot"></span>BBB Connected</span>
+      <span class="nh-badge nh-badge-i">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+        Webhook Active
+      </span>
+      <span class="nh-badge nh-badge-n">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Live Sync
+      </span>
+    </div>
 
-      const state = {
-        stats: null,
-        activeAnalyticsTab: "activity",
-        activeDetailTab: "class",
-        activeHistoryTab: "classes",
-        selectedClassId: null,
-        selectedTeacherId: null,
-        selectedStudentId: null,
-        search: "",
-        roomFilter: "",
-        teacherFilter: "",
-        studentFilter: ""
-      };
+    <div class="nh-spacer"></div>
 
-      function escapeHtml(value) {
-        return String(value ?? "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      }
+    <div style="display:flex;align-items:center;gap:9px;">
+      <button class="nh-btn-icon" id="themeToggle" title="Toggle theme">
+        <svg id="iconSun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg id="iconMoon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      </button>
+      <button class="nh-btn-ghost" id="resetButton">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+        Reset Data
+      </button>
+      <button class="nh-btn-primary" id="registerHookBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+        Register Hook
+      </button>
+    </div>
+  </div>
+</header>
 
-      function formatNumber(value) {
-        return Number(value || 0).toLocaleString("en-US");
-      }
+<!-- ==================== MAIN ==================== -->
+<main class="nh-main">
 
-      function parseDateValue(value) {
-        if (value === null || value === undefined || value === "") {
-          return null;
-        }
+  <!-- HERO ORBS -->
+  <div class="nh-hero" id="heroOrbs"></div>
 
-        if (value instanceof Date) {
-          return Number.isNaN(value.getTime()) ? null : value;
-        }
+  <!-- 2-COL SHELL -->
+  <div class="nh-shell">
 
-        if (typeof value === "number") {
-          const normalized = value < 1e12 ? value * 1000 : value;
-          const date = new Date(normalized);
-          return Number.isNaN(date.getTime()) ? null : date;
-        }
+    <!-- MAIN COLUMN -->
+    <div class="nh-col">
 
-        const numeric = Number(value);
-        if (Number.isFinite(numeric) && numeric > 0) {
-          const normalized = numeric < 1e12 ? numeric * 1000 : numeric;
-          const date = new Date(normalized);
-          return Number.isNaN(date.getTime()) ? null : date;
-        }
+      <!-- Summary strip -->
+      <div class="nh-summary" id="summaryStrip"></div>
 
-        const date = new Date(value);
-        return Number.isNaN(date.getTime()) ? null : date;
-      }
-
-      function formatDateTime(value) {
-        const date = parseDateValue(value);
-        if (!date) {
-          return "-";
-        }
-
-        return date.toLocaleString("en-US");
-      }
-
-      function formatDurationFromCreateTime(value) {
-        const start = Number(value);
-        if (!Number.isFinite(start) || start <= 0) {
-          return "-";
-        }
-
-        const diffMs = Math.max(0, Date.now() - start);
-        const totalSeconds = Math.floor(diffMs / 1000);
-        const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
-        const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
-        const seconds = String(totalSeconds % 60).padStart(2, "0");
-        return `${hours}:${minutes}:${seconds}`;
-      }
-
-      function initialsFromText(value) {
-        const text = String(value || "").trim();
-        if (!text) {
-          return "--";
-        }
-
-        const parts = text.split(/\s+/).filter(Boolean);
-        const chars = parts.slice(0, 2).map(part => part[0]).join("");
-        return chars.toUpperCase();
-      }
-
-      function roomColor(index) {
-        const palette = [
-          ["var(--emerald)", "var(--emerald-soft)"],
-          ["var(--indigo)", "var(--indigo-soft)"],
-          ["var(--amber)", "var(--amber-soft)"],
-          ["var(--brand)", "var(--brand-soft)"]
-        ];
-        return palette[index % palette.length];
-      }
-
-      function getSelectedClass(data) {
-        return data.classDetails.find(item => item.classId === state.selectedClassId) || data.classDetails[0] || null;
-      }
-
-      function getSelectedTeacher(data) {
-        return data.teacherDetails.find(item => item.teacherId === state.selectedTeacherId) || data.teacherDetails[0] || null;
-      }
-
-      function getSelectedStudent(data) {
-        return data.studentDetails.find(item => item.userId === state.selectedStudentId) || data.studentDetails[0] || null;
-      }
-
-      function getClassNameMap(data) {
-        const map = new Map();
-        (data.classDetails || []).forEach(item => {
-          map.set(item.classId, item.className || item.classId);
-        });
-        return map;
-      }
-
-      function getTeacherLabel(data, teacherId) {
-        if (!teacherId || teacherId === "unassigned") {
-          return "-";
-        }
-        return teacherId;
-      }
-
-      function ensureSelection(data) {
-        if (!state.selectedClassId && data.classDetails[0]) {
-          state.selectedClassId = data.classDetails[0].classId;
-        }
-        if (!state.selectedTeacherId && data.teacherDetails[0]) {
-          state.selectedTeacherId = data.teacherDetails[0].teacherId;
-        }
-        if (!state.selectedStudentId && data.studentDetails[0]) {
-          state.selectedStudentId = data.studentDetails[0].userId;
-        }
-      }
-
-      function renderStatusRow(data) {
-        const configured = data.hook && data.hook.configured;
-        const callbackOk = data.hook && data.hook.callbackUrl === data.hook.expectedCallbackUrl;
-        const badges = [
-          `<span class="status-badge ${configured ? "status-success" : "status-neutral"}"><span class="status-dot"></span>${configured ? "BBB Connected" : "BBB Pending"}</span>`,
-          `<span class="status-badge ${callbackOk ? "status-info" : "status-neutral"}">Webhook ${callbackOk ? "Active" : "Needs Check"}</span>`,
-          `<span class="status-badge status-neutral">Live Sync</span>`
-        ];
-        document.getElementById("statusRow").innerHTML = badges.join("");
-      }
-
-      function renderHero(data) {
-        const items = [
-          { label: "Total Events", value: data.totals.events, hint: `${formatNumber(data.totals.checksumVerified)} verified`, iconBg: "var(--brand-soft)", icon: "var(--brand)", orb: "var(--brand-soft)", svg: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>' },
-          { label: "Meetings Created", value: data.totals.meetingsCreated, hint: `${formatNumber(data.summary.uniqueMeetings)} tracked`, iconBg: "var(--indigo-soft)", icon: "var(--indigo)", orb: "var(--indigo-soft)", svg: '<path d="m22 8-6 4 6 4V8Z"></path><rect x="2" y="6" width="14" height="12" rx="2"></rect>' },
-          { label: "Participants Joined", value: data.totals.participantsJoined, hint: `${formatNumber(data.summary.uniqueUsers)} unique users`, iconBg: "var(--emerald-soft)", icon: "var(--emerald)", orb: "var(--emerald-soft)", svg: '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><path d="m10 17 5-5-5-5"></path><path d="M15 12H3"></path>' },
-          { label: "Participants Left", value: data.totals.participantsLeft, hint: `${formatNumber(data.totals.meetingsEnded)} meetings ended`, iconBg: "var(--amber-soft)", icon: "var(--amber)", orb: "var(--amber-soft)", svg: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path>' }
-        ];
-
-        document.getElementById("heroGrid").innerHTML = items.map(item => `
-          <div class="card card-pad metric-orb" style="--icon-bg:${item.iconBg}; --icon:${item.icon}; --orb:${item.orb};">
-            <div class="metric-label">
-              <span class="icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1">${item.svg}</svg>
-              </span>
-              <span>${escapeHtml(item.label)}</span>
-            </div>
-            <div class="metric-value">${formatNumber(item.value)}</div>
-            <div class="metric-hint">${escapeHtml(item.hint)}</div>
+      <!-- Live rooms -->
+      <div class="nh-card">
+        <div class="nh-card-hdr">
+          <div class="nh-card-title">
+            <span class="nh-room-dot" style="width:8px;height:8px;flex-shrink:0;"></span>
+            Live Active Rooms
+            <span class="nh-live-badge" id="liveCount">0 live</span>
           </div>
-        `).join("");
+          <span style="font-size:12px;color:var(--text3);font-weight:500;" id="livePax">0 participants</span>
+        </div>
+        <div class="nh-rooms" id="liveRooms"></div>
+      </div>
 
-        const miniItems = [
-          ["Unique Meetings", data.summary.uniqueMeetings, "var(--indigo)"],
-          ["Unique Users", data.summary.uniqueUsers, "var(--emerald)"],
-          ["Unique Classes", data.summary.uniqueClasses, "var(--brand)"],
-          ["Unique Teachers", data.summary.uniqueTeachers, "var(--amber)"]
-        ];
-
-        document.getElementById("miniGrid").innerHTML = miniItems.map(([label, value, color]) => `
-          <div class="card card-pad metric-card">
-            <div class="metric-label" style="color:${color};">
-              <span>${escapeHtml(label)}</span>
-            </div>
-            <div class="metric-value">${formatNumber(value)}</div>
+      <!-- Analytics -->
+      <div class="nh-card">
+        <div class="nh-card-hdr">
+          <div class="nh-card-title">
+            <span class="nh-card-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16v-5M12 16V8M17 16v-3"/></svg>
+            </span>
+            Analytics
           </div>
-        `).join("");
-      }
-
-      function renderLiveRooms(data) {
-        const liveRooms = data.liveRooms || [];
-        const totalParticipants = liveRooms.reduce((sum, room) => sum + Number(room.attendeeCount || 0), 0);
-        document.getElementById("liveBadge").textContent = `${liveRooms.length} live`;
-        document.getElementById("liveSummary").textContent = `${formatNumber(totalParticipants)} participants now`;
-
-        const root = document.getElementById("liveRooms");
-        if (!liveRooms.length) {
-          root.innerHTML = '<div class="empty">No active BBB rooms right now.</div>';
-          return;
-        }
-
-        root.innerHTML = liveRooms.map((room, index) => {
-          const [color, soft] = roomColor(index);
-          const teacher = getTeacherLabel(data, room.teacherId);
-          return `
-            <div class="live-room" style="--room-color:${color};">
-              <div class="live-top">
-                <div class="live-name">
-                  <span class="status-dot" style="background:var(--emerald);"></span>
-                  <strong class="ellipsis">${escapeHtml(room.meetingName || room.classId || room.meetingId || "Unnamed room")}</strong>
-                </div>
-                <span class="tiny-pill tiny-live">LIVE</span>
-              </div>
-              <div class="live-sub mono">${escapeHtml(room.meetingId || "-")} · ${escapeHtml(teacher)}</div>
-              <div class="live-meta">
-                <span>${formatNumber(room.attendeeCount || 0)} participants</span>
-                <span>${formatNumber(room.moderatorCount || 0)} moderators</span>
-                <span>${formatDurationFromCreateTime(room.createTime)}</span>
-              </div>
-              <div class="live-sub" style="margin-top:10px;">
-                Class: ${escapeHtml(room.meetingName || room.classId || "-")}<br />
-                Teacher: ${escapeHtml(teacher)}
-              </div>
-            </div>
-          `;
-        }).join("");
-      }
-
-      function renderAnalyticsTabs() {
-        const analyticsTabs = document.getElementById("analyticsTabs");
-        if (!analyticsTabs) {
-          return;
-        }
-
-        const tabs = [
-          ["activity", "Activity"],
-          ["classes", "Classes"],
-          ["teachers", "Teachers"],
-          ["students", "Students"]
-        ];
-
-        analyticsTabs.innerHTML = tabs.map(([key, label]) => `
-          <button class="analytics-tab ${state.activeAnalyticsTab === key ? "active" : ""}" data-analytics-tab="${key}">${escapeHtml(label)}</button>
-        `).join("");
-      }
-
-      function buildActivitySeries(data) {
-        const events = (data.recentEvents || [])
-          .filter(item => item.timestamp)
-          .slice()
-          .sort((a, b) => {
-            const aDate = parseDateValue(a.timestamp);
-            const bDate = parseDateValue(b.timestamp);
-            return (aDate ? aDate.getTime() : 0) - (bDate ? bDate.getTime() : 0);
-          });
-
-        if (!events.length) {
-          return [];
-        }
-
-        const buckets = new Map();
-        for (const event of events) {
-          const eventDate = parseDateValue(event.timestamp);
-          if (!eventDate) {
-            continue;
-          }
-
-          const label = eventDate.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit"
-          });
-          buckets.set(label, (buckets.get(label) || 0) + 1);
-        }
-
-        return Array.from(buckets.entries()).slice(-10).map(([label, value]) => ({ label, value }));
-      }
-
-      function renderActivityLineChart(series) {
-        if (!series.length) {
-          return '<div class="empty">No event activity yet.</div>';
-        }
-
-        const width = 760;
-        const height = 250;
-        const paddingX = 16;
-        const paddingTop = 16;
-        const paddingBottom = 30;
-        const maxValue = Math.max(...series.map(item => item.value), 1);
-        const innerWidth = width - paddingX * 2;
-        const innerHeight = height - paddingTop - paddingBottom;
-        const step = series.length > 1 ? innerWidth / (series.length - 1) : 0;
-
-        const points = series.map((item, index) => {
-          const x = paddingX + (step * index);
-          const y = paddingTop + innerHeight - ((item.value / maxValue) * innerHeight);
-          return { ...item, x, y };
-        });
-
-        const pointString = points.map(item => `${item.x},${item.y}`).join(" ");
-        const areaPath = `M ${points[0].x} ${height - paddingBottom} L ${points.map(item => `${item.x} ${item.y}`).join(" L ")} L ${points[points.length - 1].x} ${height - paddingBottom} Z`;
-        const grid = Array.from({ length: 5 }, (_, index) => paddingTop + (innerHeight / 4) * index);
-
-        return `
-          <div class="chart-note"><span class="chart-swatch"></span>Events over recent activity window</div>
-          <svg class="chart-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="chartArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="var(--brand)" stop-opacity="0.18"></stop>
-                <stop offset="100%" stop-color="var(--brand)" stop-opacity="0"></stop>
-              </linearGradient>
-            </defs>
-            ${grid.map(y => `<line x1="0" x2="${width}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"></line>`).join("")}
-            <path d="${areaPath}" fill="url(#chartArea)"></path>
-            <polyline points="${pointString}" fill="none" stroke="var(--brand)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>
-            ${points.map(item => `<circle cx="${item.x}" cy="${item.y}" r="3" fill="white" stroke="var(--brand)" stroke-width="2"></circle>`).join("")}
-            ${points.map(item => `<text x="${item.x}" y="${height - 8}" text-anchor="middle" fill="var(--text-3)" font-size="9">${escapeHtml(item.label)}</text>`).join("")}
-          </svg>
-        `;
-      }
-
-      function renderVerticalBarChart(rows, unitLabel) {
-        if (!rows.length) {
-          return '<div class="empty">No ranking data yet.</div>';
-        }
-
-        const maxValue = Math.max(...rows.map(item => item.value), 1);
-        return `
-          <div class="chart-bars">
-            ${rows.map((item, index) => {
-              const [color] = roomColor(index);
-              const pct = Math.max(6, Math.round((item.value / maxValue) * 100));
-              return `
-                <div class="chart-bar-col">
-                  <div class="chart-bar" title="${escapeHtml(String(item.value))}" style="height:${pct}%; background:${color};"></div>
-                  <span class="chart-bar-label">${escapeHtml(item.label)}</span>
-                </div>
-              `;
-            }).join("")}
-          </div>
-          <div class="section-note" style="text-align:right; margin-top:8px;">${escapeHtml(unitLabel)}</div>
-        `;
-      }
-
-      function renderHorizontalBarChart(rows) {
-        if (!rows.length) {
-          return '<div class="empty">No comparison data yet.</div>';
-        }
-
-        const maxValue = Math.max(...rows.map(item => item.value), 1);
-        return `
-          <div class="chart-hbars">
-            ${rows.map((item, index) => {
-              const [color] = roomColor(index);
-              const pct = Math.max(6, Math.round((item.value / maxValue) * 100));
-              return `
-                <div>
-                  <div class="chart-hbar-head">
-                    <strong class="mono ellipsis">${escapeHtml(item.label)}</strong>
-                    <span>${formatNumber(item.value)}</span>
-                  </div>
-                  <div class="chart-hbar-track">
-                    <div class="chart-hbar-fill" style="width:${pct}%; background:${color};"></div>
-                  </div>
-                </div>
-              `;
-            }).join("")}
-          </div>
-        `;
-      }
-
-      function renderDonutChart(rows) {
-        if (!rows.length) {
-          return '<div class="empty">No student distribution yet.</div>';
-        }
-
-        const total = rows.reduce((sum, item) => sum + item.value, 0);
-        let offset = 0;
-        const segments = rows.map((item, index) => {
-          const [color] = roomColor(index);
-          const pct = total ? (item.value / total) * 100 : 0;
-          const start = offset;
-          offset += pct;
-          return { ...item, color, pct, start };
-        });
-
-        const gradient = `conic-gradient(${segments.map(item => `${item.color} ${item.start}% ${item.start + item.pct}%`).join(", ")})`;
-
-        return `
-          <div class="chart-donut-wrap">
-            <div class="chart-donut" style="background:${gradient};">
-              <div class="chart-donut-hole">
-                <div class="chart-donut-total">
-                  <strong>${formatNumber(total)}</strong>
-                  <span>joins</span>
-                </div>
-              </div>
-            </div>
-            <div class="chart-legend">
-              ${segments.map(item => `
-                <div class="chart-legend-row">
-                  <span class="chart-legend-dot" style="background:${item.color};"></span>
-                  <strong class="ellipsis">${escapeHtml(item.label)}</strong>
-                  <span>${formatNumber(item.value)}</span>
-                  <span class="muted" style="width:40px; text-align:right;">${item.pct.toFixed(0)}%</span>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        `;
-      }
-
-      function renderAnalytics(data) {
-        const analyticsContent = document.getElementById("analyticsContent");
-        if (!analyticsContent) {
-          return;
-        }
-
-        renderAnalyticsTabs();
-
-        let content = "";
-        if (state.activeAnalyticsTab === "classes") {
-          const rows = (data.topClasses || []).slice(0, 8).map(item => ({
-            label: item.className || item.classId || "-",
-            value: Number(item.joinEvents || 0)
-          }));
-          content = renderHorizontalBarChart(rows);
-        } else if (state.activeAnalyticsTab === "teachers") {
-          const rows = (data.topTeachers || []).slice(0, 8).map(item => ({
-            label: item.teacherId || "-",
-            value: Number(item.students || 0)
-          }));
-          content = renderHorizontalBarChart(rows);
-        } else if (state.activeAnalyticsTab === "students") {
-          const rows = (data.topStudents || []).slice(0, 6).map(item => ({
-            label: item.userName || item.userId || "-",
-            value: Number(item.joins || 0)
-          }));
-          content = renderDonutChart(rows);
-        } else {
-          content = renderActivityLineChart(buildActivitySeries(data));
-        }
-
-        analyticsContent.innerHTML = content;
-      }
-
-      function renderRankList(targetId, rows, buildRow) {
-        const root = document.getElementById(targetId);
-        if (!rows.length) {
-          root.innerHTML = '<div class="empty" style="padding:12px 0;">No data yet.</div>';
-          return;
-        }
-        root.innerHTML = rows.map((item, index) => buildRow(item, index)).join("");
-      }
-
-      function renderSidebar(data) {
-        renderRankList("topClasses", data.topClasses || [], (item, index) => `
-          <div class="rank-item">
-            <div class="rank">${index + 1}</div>
-            <div class="rank-main">
-              <strong class="ellipsis">${escapeHtml(item.className || item.classId || "-")}</strong>
-              <span class="ellipsis">${formatNumber(item.teachers)} teachers · ${formatNumber(item.students)} students</span>
-            </div>
-            <div class="rank-value" style="color:var(--brand);">${formatNumber(item.joinEvents)}</div>
-          </div>
-        `);
-
-        renderRankList("topTeachers", data.topTeachers || [], (item) => `
-          <div class="rank-item">
-            <div class="avatar" style="background:var(--amber-soft); color:var(--amber);">${escapeHtml(initialsFromText(item.teacherId))}</div>
-            <div class="rank-main">
-              <strong class="ellipsis">${escapeHtml(item.teacherId || "-")}</strong>
-              <span class="ellipsis">${formatNumber(item.classes)} classes · ${formatNumber(item.meetings)} meetings</span>
-            </div>
-            <div class="rank-value" style="color:var(--amber);">${formatNumber(item.students)}</div>
-          </div>
-        `);
-
-        renderRankList("topStudents", data.topStudents || [], (item) => `
-          <div class="rank-item">
-            <div class="avatar" style="background:var(--emerald-soft); color:var(--emerald);">${escapeHtml(initialsFromText(item.userName || item.userId))}</div>
-            <div class="rank-main">
-              <strong class="ellipsis">${escapeHtml(item.userName || item.userId || "-")}</strong>
-              <span class="ellipsis">${formatNumber(item.classes)} classes · ${formatNumber(item.joins)} joins</span>
-            </div>
-            <div class="rank-value" style="color:var(--emerald);">${formatNumber(item.joins)}</div>
-          </div>
-        `);
-      }
-
-      function renderDetailTabs() {
-        const tabs = [
-          ["class", "Class Focus"],
-          ["teacher", "Teacher Focus"],
-          ["student", "Student Focus"]
-        ];
-        document.getElementById("detailTabs").innerHTML = tabs.map(([key, label]) => `
-          <button class="tab-button ${state.activeDetailTab === key ? "active" : ""}" data-detail-tab="${key}">${escapeHtml(label)}</button>
-        `).join("");
-      }
-
-      function renderClassDetail(data) {
-        const selected = getSelectedClass(data);
-        if (!selected) {
-          return '<div class="empty">No class data yet.</div>';
-        }
-
-        state.selectedClassId = selected.classId;
-        const totalDurationSamples = (selected.participantActivity || []).map(item => item.duration).filter(Boolean);
-
-        return `
-          <div class="detail-hero">
-            <div class="detail-title">
-              <div class="detail-icon" style="background:var(--brand-soft); color:var(--brand);">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 10 12 5 2 10l10 5 10-5Z"></path>
-                  <path d="M6 12v5c3 2.6 9 2.6 12 0v-5"></path>
-                </svg>
-              </div>
-              <div>
-                <div class="detail-name">${escapeHtml(selected.className || selected.classId)}</div>
-                <div class="detail-id mono">${escapeHtml(selected.classId || "-")}</div>
-              </div>
-            </div>
-            <div style="display:flex; gap:22px;">
-              <div class="summary-stat"><strong style="color:var(--emerald);">${formatNumber(selected.totals.joinEvents)}</strong><span>Total joins</span></div>
-              <div class="summary-stat"><strong>${formatNumber(selected.totals.meetings)}</strong><span>Sessions</span></div>
-              <div class="summary-stat"><strong>${escapeHtml(totalDurationSamples[0] || "-")}</strong><span>Live dur</span></div>
-            </div>
-          </div>
-
-          <div class="detail-grid">
-            <div class="detail-box">
-              <h3>Teachers</h3>
-              <div class="list">
-                ${(selected.teachers || []).map(item => `
-                  <div class="list-item">
-                    <div class="avatar" style="background:var(--amber-soft); color:var(--amber);">${escapeHtml(initialsFromText(item.teacherId))}</div>
-                    <div>
-                      <strong>${escapeHtml(item.teacherId || "-")}</strong>
-                      <span>${formatNumber(item.meetings)} meetings in this class</span>
-                    </div>
-                  </div>
-                `).join("") || '<div class="empty" style="padding:8px 0;">No teachers</div>'}
-              </div>
-            </div>
-
-            <div class="detail-box">
-              <h3>Students</h3>
-              <div class="list">
-                ${(selected.students || []).slice(0, 6).map(item => `
-                  <div class="list-item">
-                    <div class="avatar" style="background:var(--emerald-soft); color:var(--emerald);">${escapeHtml(initialsFromText(item.userName || item.userId))}</div>
-                    <div>
-                      <strong>${escapeHtml(item.userName || item.userId || "-")}</strong>
-                      <span>${formatNumber(item.joinCount)} joins · ${formatNumber(item.leaveCount)} leaves</span>
-                    </div>
-                  </div>
-                `).join("") || '<div class="empty" style="padding:8px 0;">No students</div>'}
-              </div>
-            </div>
-
-            <div class="detail-box">
-              <h3>Recent Meetings</h3>
-              <div class="list">
-                ${(selected.meetings || []).map(item => `
-                  <div class="list-item">
-                    <div class="avatar" style="background:var(--indigo-soft); color:var(--indigo);">ME</div>
-                    <div>
-                      <strong class="ellipsis">${escapeHtml(item.meetingName || item.meetingId || "-")}</strong>
-                      <span>${formatNumber(item.students)} students · ${formatNumber(item.joinEvents)} joins</span>
-                    </div>
-                  </div>
-                `).join("") || '<div class="empty" style="padding:8px 0;">No meetings</div>'}
-              </div>
-            </div>
-          </div>
-
-          <div class="detail-box" style="margin-top:14px;">
-            <h3>Room Activity</h3>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Moderator</th>
-                    <th>Activity Score</th>
-                    <th>Talk time</th>
-                    <th>Webcam Time</th>
-                    <th>Messages</th>
-                    <th>Reactions</th>
-                    <th>Poll Votes</th>
-                    <th>Raise Hands</th>
-                    <th>Join</th>
-                    <th>Left</th>
-                    <th>Duration</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${(selected.participantActivity || []).map(item => `
-                    <tr>
-                      <td>${escapeHtml(item.name || item.userId || "-")}</td>
-                      <td>${item.moderator ? "TRUE" : "FALSE"}</td>
-                      <td>${formatNumber(item.activityScore || 0)}</td>
-                      <td>${escapeHtml(item.talkTime || "-")}</td>
-                      <td>${escapeHtml(item.webcamTime || "-")}</td>
-                      <td>${formatNumber(item.messages || 0)}</td>
-                      <td>${formatNumber(item.reactions || 0)}</td>
-                      <td>${formatNumber(item.pollVotes || 0)}</td>
-                      <td>${formatNumber(item.raiseHands || 0)}</td>
-                      <td>${escapeHtml(formatDateTime(item.joinAt))}</td>
-                      <td>${escapeHtml(formatDateTime(item.leftAt))}</td>
-                      <td>${escapeHtml(item.duration || "-")}</td>
-                    </tr>
-                  `).join("") || '<tr><td colspan="12" class="empty">No participant activity yet.</td></tr>'}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        `;
-      }
-
-      function renderTeacherDetail(data) {
-        const selected = getSelectedTeacher(data);
-        if (!selected) {
-          return '<div class="empty">No teacher data yet.</div>';
-        }
-
-        state.selectedTeacherId = selected.teacherId;
-        return `
-          <div class="detail-hero">
-            <div class="detail-title">
-              <div class="detail-icon" style="background:var(--amber-soft); color:var(--amber);">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-              </div>
-              <div>
-                <div class="detail-name">${escapeHtml(selected.teacherId || "-")}</div>
-                <div class="detail-id">${formatNumber(selected.totals.classes)} classes managed</div>
-              </div>
-            </div>
-            <div style="display:flex; gap:22px;">
-              <div class="summary-stat"><strong style="color:var(--amber);">${formatNumber(selected.totals.joinEvents)}</strong><span>Events</span></div>
-              <div class="summary-stat"><strong>${formatNumber(selected.totals.meetings)}</strong><span>Sessions</span></div>
-              <div class="summary-stat"><strong>${formatNumber(selected.totals.students)}</strong><span>Students</span></div>
-            </div>
-          </div>
-          <div class="detail-box">
-            <h3>Classes Taught</h3>
-            <div class="list">
-              ${(selected.classNames || []).map(item => `
-                <div class="list-item">
-                  <div class="avatar" style="background:var(--brand-soft); color:var(--brand);">${escapeHtml(initialsFromText(item))}</div>
-                  <div>
-                    <strong>${escapeHtml(item)}</strong>
-                    <span>Tracked in BBB dashboard</span>
-                  </div>
-                </div>
-              `).join("") || '<div class="empty" style="padding:8px 0;">No classes</div>'}
-            </div>
-          </div>
-        `;
-      }
-
-      function renderStudentDetail(data) {
-        const selected = getSelectedStudent(data);
-        if (!selected) {
-          return '<div class="empty">No student data yet.</div>';
-        }
-
-        state.selectedStudentId = selected.userId;
-        return `
-          <div class="detail-hero">
-            <div class="detail-title">
-              <div class="detail-icon" style="background:var(--emerald-soft); color:var(--emerald);">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                </svg>
-              </div>
-              <div>
-                <div class="detail-name">${escapeHtml(selected.userName || selected.userId || "-")}</div>
-                <div class="detail-id mono">${escapeHtml(selected.userId || "-")}</div>
-              </div>
-            </div>
-            <div style="display:flex; gap:22px;">
-              <div class="summary-stat"><strong style="color:var(--emerald);">${formatNumber(selected.totals.joins)}</strong><span>Joins</span></div>
-              <div class="summary-stat"><strong>${formatNumber(selected.classIds.length)}</strong><span>Classes</span></div>
-              <div class="summary-stat"><strong>${formatNumber(selected.teacherIds.length)}</strong><span>Teachers</span></div>
-            </div>
-          </div>
-          <div class="detail-box">
-            <h3>Classes Attended</h3>
-            <div class="list">
-              ${(selected.classNames || []).map(item => `
-                <div class="list-item">
-                  <div class="avatar" style="background:var(--brand-soft); color:var(--brand);">${escapeHtml(initialsFromText(item))}</div>
-                  <div>
-                    <strong>${escapeHtml(item)}</strong>
-                    <span>Last meeting: ${escapeHtml(selected.lastMeetingId || "-")}</span>
-                  </div>
-                </div>
-              `).join("") || '<div class="empty" style="padding:8px 0;">No classes</div>'}
-            </div>
-          </div>
-        `;
-      }
-
-      function renderDetailPanel(data) {
-        renderDetailTabs();
-        if (state.activeDetailTab === "teacher") {
-          document.getElementById("detailContent").innerHTML = renderTeacherDetail(data);
-        } else if (state.activeDetailTab === "student") {
-          document.getElementById("detailContent").innerHTML = renderStudentDetail(data);
-        } else {
-          document.getElementById("detailContent").innerHTML = renderClassDetail(data);
-        }
-      }
-
-      function renderHistoryTabs() {
-        const tabs = [
-          ["classes", "Classes"],
-          ["teachers", "Teachers"],
-          ["students", "Students"],
-          ["rooms", "Live Rooms"]
-        ];
-        document.getElementById("historyTabs").innerHTML = tabs.map(([key, label]) => `
-          <button class="chip ${state.activeHistoryTab === key ? "active" : ""}" data-history-tab="${key}">${escapeHtml(label)}</button>
-        `).join("");
-      }
-
-      function updateFilterOptions(data) {
-        const classSelect = document.getElementById("roomFilter");
-        const teacherSelect = document.getElementById("teacherFilter");
-        const studentSelect = document.getElementById("studentFilter");
-
-        const classOptions = ['<option value="">All classes</option>'].concat(
-          (data.classDetails || []).map(item => `<option value="${escapeHtml(item.classId)}"${state.roomFilter === item.classId ? " selected" : ""}>${escapeHtml(item.className || item.classId)}</option>`)
-        );
-        const teacherOptions = ['<option value="">All teachers</option>'].concat(
-          (data.teacherDetails || []).map(item => `<option value="${escapeHtml(item.teacherId)}"${state.teacherFilter === item.teacherId ? " selected" : ""}>${escapeHtml(item.teacherId)}</option>`)
-        );
-        const studentOptions = ['<option value="">All students</option>'].concat(
-          (data.studentDetails || []).map(item => `<option value="${escapeHtml(item.userId)}"${state.studentFilter === item.userId ? " selected" : ""}>${escapeHtml(item.userName || item.userId)}</option>`)
-        );
-
-        classSelect.innerHTML = classOptions.join("");
-        teacherSelect.innerHTML = teacherOptions.join("");
-        studentSelect.innerHTML = studentOptions.join("");
-      }
-
-      function matchSearch(values) {
-        if (!state.search) {
-          return true;
-        }
-        const haystack = values.join(" ").toLowerCase();
-        return haystack.includes(state.search);
-      }
-
-      function renderHistoryTable(data) {
-        renderHistoryTabs();
-        updateFilterOptions(data);
-
-        const classNameMap = getClassNameMap(data);
-        let columns = [];
-        let rows = [];
-
-        if (state.activeHistoryTab === "teachers") {
-          columns = ["Teacher", "Classes", "Students", "Meetings", "Join Events", "Leave Events"];
-          rows = (data.topTeachers || [])
-            .filter(item => (!state.teacherFilter || item.teacherId === state.teacherFilter))
-            .filter(item => matchSearch([item.teacherId]))
-            .map(item => `
-              <tr>
-                <td><button class="link-button" data-select-teacher="${escapeHtml(item.teacherId)}">${escapeHtml(item.teacherId || "-")}</button></td>
-                <td>${formatNumber(item.classes)}</td>
-                <td>${formatNumber(item.students)}</td>
-                <td>${formatNumber(item.meetings)}</td>
-                <td>${formatNumber(item.joinEvents)}</td>
-                <td>${formatNumber(item.leaveEvents)}</td>
-              </tr>
-            `);
-        } else if (state.activeHistoryTab === "students") {
-          columns = ["Student", "Student ID", "Classes", "Teachers", "Joins", "Leaves"];
-          rows = (data.topStudents || [])
-            .filter(item => (!state.studentFilter || item.userId === state.studentFilter))
-            .filter(item => matchSearch([item.userName, item.userId]))
-            .map(item => `
-              <tr>
-                <td><button class="link-button" data-select-student="${escapeHtml(item.userId)}">${escapeHtml(item.userName || item.userId || "-")}</button></td>
-                <td class="mono">${escapeHtml(item.userId || "-")}</td>
-                <td>${formatNumber(item.classes)}</td>
-                <td>${formatNumber(item.teachers)}</td>
-                <td>${formatNumber(item.joins)}</td>
-                <td>${formatNumber(item.leaves)}</td>
-              </tr>
-            `);
-        } else if (state.activeHistoryTab === "rooms") {
-          columns = ["Room", "Meeting ID", "Teacher", "Participants", "Moderators", "Duration"];
-          rows = (data.liveRooms || [])
-            .filter(item => (!state.roomFilter || item.classId === state.roomFilter))
-            .filter(item => (!state.teacherFilter || item.teacherId === state.teacherFilter))
-            .filter(item => matchSearch([item.meetingName, item.meetingId, item.teacherId]))
-            .map(item => `
-              <tr>
-                <td><button class="link-button" data-select-class="${escapeHtml(item.classId || item.meetingId)}">${escapeHtml(item.meetingName || item.classId || item.meetingId || "-")}</button></td>
-                <td class="mono">${escapeHtml(item.meetingId || "-")}</td>
-                <td>${escapeHtml(item.teacherId || "-")}</td>
-                <td>${formatNumber(item.attendeeCount || 0)}</td>
-                <td>${formatNumber(item.moderatorCount || 0)}</td>
-                <td>${escapeHtml(formatDurationFromCreateTime(item.createTime))}</td>
-              </tr>
-            `);
-        } else {
-          columns = ["Class", "Teacher Count", "Student Count", "Meetings", "Join Events", "Leave Events"];
-          rows = (data.topClasses || [])
-            .filter(item => (!state.roomFilter || item.classId === state.roomFilter))
-            .filter(item => matchSearch([item.className, item.classId]))
-            .map(item => `
-              <tr>
-                <td><button class="link-button" data-select-class="${escapeHtml(item.classId)}">${escapeHtml(item.className || item.classId || "-")}</button></td>
-                <td>${formatNumber(item.teachers)}</td>
-                <td>${formatNumber(item.students)}</td>
-                <td>${formatNumber(item.meetings)}</td>
-                <td>${formatNumber(item.joinEvents)}</td>
-                <td>${formatNumber(item.leaveEvents)}</td>
-              </tr>
-            `);
-        }
-
-        const header = `<thead><tr>${columns.map(item => `<th>${escapeHtml(item)}</th>`).join("")}</tr></thead>`;
-        const body = rows.length ? `<tbody>${rows.join("")}</tbody>` : `<tbody><tr><td colspan="${columns.length}" class="empty">No rows match the current filters.</td></tr></tbody>`;
-        document.getElementById("historyTable").innerHTML = `<table>${header}${body}</table>`;
-      }
-
-      function bindInteractions() {
-        document.querySelectorAll("[data-detail-tab]").forEach(button => {
-          button.onclick = () => {
-            state.activeDetailTab = button.dataset.detailTab;
-            renderCurrentView();
-          };
-        });
-
-        document.querySelectorAll("[data-analytics-tab]").forEach(button => {
-          button.onclick = () => {
-            state.activeAnalyticsTab = button.dataset.analyticsTab;
-            renderCurrentView();
-          };
-        });
-
-        document.querySelectorAll("[data-history-tab]").forEach(button => {
-          button.onclick = () => {
-            state.activeHistoryTab = button.dataset.historyTab;
-            renderCurrentView();
-          };
-        });
-
-        document.querySelectorAll("[data-select-class]").forEach(button => {
-          button.onclick = () => {
-            state.selectedClassId = button.dataset.selectClass;
-            state.activeDetailTab = "class";
-            renderCurrentView();
-          };
-        });
-
-        document.querySelectorAll("[data-select-teacher]").forEach(button => {
-          button.onclick = () => {
-            state.selectedTeacherId = button.dataset.selectTeacher;
-            state.activeDetailTab = "teacher";
-            renderCurrentView();
-          };
-        });
-
-        document.querySelectorAll("[data-select-student]").forEach(button => {
-          button.onclick = () => {
-            state.selectedStudentId = button.dataset.selectStudent;
-            state.activeDetailTab = "student";
-            renderCurrentView();
-          };
-        });
-      }
-
-      function renderCurrentView() {
-        const data = state.stats;
-        if (!data) {
-          return;
-        }
-
-        ensureSelection(data);
-        // renderStatusRow(data);
-        renderHero(data);
-        renderLiveRooms(data);
-        renderAnalytics(data);
-        renderSidebar(data);
-        renderDetailPanel(data);
-        renderHistoryTable(data);
-        bindInteractions();
-      }
-
-      async function postJson(url, payload) {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: payload ? { "Content-Type": "application/json" } : undefined,
-          body: payload ? JSON.stringify(payload) : undefined
-        });
-        return response.json();
-      }
-
-      async function loadStats() {
-        const response = await fetch("/api/stats");
-        const data = await response.json();
-        state.stats = data;
-        renderCurrentView();
-      }
-
-      function connectRealtime() {
-        eventSource = new EventSource("/api/stream");
-        eventSource.addEventListener("stats", event => {
-          state.stats = JSON.parse(event.data);
-          renderCurrentView();
-        });
-      }
-
-      document.getElementById("refreshButton").addEventListener("click", () => {
-        loadStats();
-      });
-
-      document.getElementById("resetButton").addEventListener("click", async () => {
-        await postJson("/api/reset");
-      });
-
-      document.getElementById("searchInput").addEventListener("input", event => {
-        state.search = String(event.target.value || "").trim().toLowerCase();
-        renderCurrentView();
-      });
-
-      document.getElementById("roomFilter").addEventListener("change", event => {
-        state.roomFilter = event.target.value;
-        renderCurrentView();
-      });
-
-      document.getElementById("teacherFilter").addEventListener("change", event => {
-        state.teacherFilter = event.target.value;
-        renderCurrentView();
-      });
-
-      document.getElementById("studentFilter").addEventListener("change", event => {
-        state.studentFilter = event.target.value;
-        renderCurrentView();
-      });
-
-      loadStats();
-      connectRealtime();
-    </script>
-  </body>
+        </div>
+        <div class="nh-chart-tabs">
+          <button class="nh-ctab active" data-chart="activity">Activity</button>
+          <button class="nh-ctab" data-chart="peak">Peak Hours</button>
+          <button class="nh-ctab" data-chart="duration">Duration</button>
+          <button class="nh-ctab" data-chart="participants">Participants</button>
+          <button class="nh-ctab" data-chart="events">Events</button>
+          <button class="nh-ctab" data-chart="workload">Workload</button>
+        </div>
+        <div class="nh-cpane active" id="chart-activity"><div class="nh-cwrap"><canvas id="meetingActivityChart"></canvas></div></div>
+        <div class="nh-cpane" id="chart-peak"><div class="nh-cwrap"><canvas id="peakUsageChart"></canvas></div></div>
+        <div class="nh-cpane" id="chart-duration"><div class="nh-cwrap"><canvas id="durationTrendChart"></canvas></div></div>
+        <div class="nh-cpane" id="chart-participants"><div class="nh-cwrap sm"><canvas id="participantChart"></canvas></div></div>
+        <div class="nh-cpane" id="chart-events"><div class="nh-cwrap sm"><canvas id="eventTypeChart"></canvas></div></div>
+        <div class="nh-cpane" id="chart-workload"><div class="nh-cwrap sm"><canvas id="teacherWorkloadChart"></canvas></div></div>
+      </div>
+
+      <!-- Explore -->
+      <div class="nh-card">
+        <div class="nh-etabs" id="exploreTabs">
+          <button class="nh-etab active" data-tab="classes">Classes</button>
+          <button class="nh-etab" data-tab="teachers">Teachers</button>
+          <button class="nh-etab" data-tab="students">Students</button>
+          <button class="nh-etab" data-tab="history">History</button>
+        </div>
+        <div id="tabContent"></div>
+        <div id="detailPanel"></div>
+      </div>
+
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="nh-sidebar">
+      <div class="nh-card">
+        <div class="nh-lb-hdr">
+          <span class="nh-lb-ico" style="background:var(--brandSoft);color:var(--brand);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 0 12 0V3H6z"/><path d="M6 4H3v2a3 3 0 0 0 3 3M18 4h3v2a3 3 0 0 1-3 3M9 21h6M12 17v4"/></svg>
+          </span>
+          <h3 class="nh-lb-title">Top Classes</h3>
+        </div>
+        <div id="topClassesList"></div>
+      </div>
+      <div class="nh-card">
+        <div class="nh-lb-hdr">
+          <span class="nh-lb-ico" style="background:var(--amberSoft);color:var(--amber);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <h3 class="nh-lb-title">Top Teachers</h3>
+        </div>
+        <div id="topTeachersList"></div>
+      </div>
+      <div class="nh-card">
+        <div class="nh-lb-hdr">
+          <span class="nh-lb-ico" style="background:var(--emeraldSoft);color:var(--emerald);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+          </span>
+          <h3 class="nh-lb-title">Top Students</h3>
+        </div>
+        <div id="topStudentsList"></div>
+      </div>
+    </aside>
+
+  </div>
+</main>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+let eventSource;
+const state = {
+  stats: null,
+  activeTab: "classes",
+  activeChart: "activity",
+  selectedClassId: null,
+  selectedTeacherId: null,
+  selectedStudentId: null
+};
+
+function getTodayDate() { return new Date().toISOString().split("T")[0]; }
+
+const historyState = {
+  searchType: "classes", searchQuery: "",
+  dateFrom: getTodayDate(), dateTo: getTodayDate(),
+  page: 1, results: null, loading: false
+};
+
+const classFilterState = {
+  search: "", dateFrom: "", dateTo: "",
+  page: 1, results: null, loading: false
+};
+
+// ============================================================
+//  THEME
+// ============================================================
+function initTheme() { applyTheme(localStorage.getItem("nh-theme") || "light"); }
+
+function applyTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  document.getElementById("iconSun").style.display  = t === "dark" ? "none"  : "block";
+  document.getElementById("iconMoon").style.display = t === "dark" ? "block" : "none";
+}
+
+function toggleTheme() {
+  const nxt = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  localStorage.setItem("nh-theme", nxt);
+  applyTheme(nxt);
+}
+
+// ============================================================
+//  CHART TABS
+// ============================================================
+const chartInstances = {};
+
+function switchChartTab(id) {
+  state.activeChart = id;
+  document.querySelectorAll(".nh-ctab").forEach(b => b.classList.toggle("active", b.dataset.chart === id));
+  document.querySelectorAll(".nh-cpane").forEach(p => p.classList.toggle("active", p.id === "chart-" + id));
+  const map = { activity:chartInstances.meetingActivity, peak:chartInstances.peakUsage, duration:chartInstances.durationTrend, participants:chartInstances.participant, events:chartInstances.eventType, workload:chartInstances.teacherWorkload };
+  if (map[id]) setTimeout(() => map[id].resize(), 10);
+}
+
+// ============================================================
+//  FORMATTERS
+// ============================================================
+function fmt(v) { return v ?? 0; }
+
+function fmtDT(v) {
+  if (!v) return "-";
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return "-";
+  return d.toLocaleString("vi-VN", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+}
+
+function fmtDTen(v) {
+  if (!v) return "-";
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return "-";
+  return d.toLocaleString("en-US");
+}
+
+function initials(name) {
+  if (!name) return "?";
+  return name.split(/\s+/).map(p => p[0]).join("").toUpperCase().slice(0, 2);
+}
+
+// ============================================================
+//  HERO ORBS
+// ============================================================
+function renderHeroOrbs(data) {
+  const el = document.getElementById("heroOrbs");
+  if (!el) return;
+  const orbs = [
+    { lbl:"Total Events",        val:fmt(data.totals?.events),             bg:"var(--slateSoft)",  ic:"var(--slate)",   tc:"var(--text3)",   icon:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,        trend:"all webhook events" },
+    { lbl:"Meetings Created",     val:fmt(data.totals?.meetingsCreated),    bg:"var(--indigoSoft)", ic:"var(--indigo)",  tc:"var(--indigo)",  icon:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>`, trend:"total created" },
+    { lbl:"Participants Joined",  val:fmt(data.totals?.participantsJoined), bg:"var(--emeraldSoft)",ic:"var(--emerald)", tc:"var(--emerald)", icon:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>`, trend:"total joins" },
+    { lbl:"Participants Left",    val:fmt(data.totals?.participantsLeft),   bg:"var(--amberSoft)",  ic:"var(--amber)",   tc:"var(--text3)",   icon:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>`,  trend:"total leaves" }
+  ];
+  el.innerHTML = orbs.map(o => `
+    <div class="nh-orb">
+      <div class="nh-orb-blob" style="background:${o.bg};"></div>
+      <div class="nh-orb-top">
+        <span class="nh-orb-icon" style="background:${o.bg};color:${o.ic};">${o.icon}</span>
+        <span class="nh-orb-label">${o.lbl}</span>
+      </div>
+      <div class="nh-orb-value">${o.val}</div>
+      <div class="nh-orb-trend" style="color:${o.tc};">${o.trend}</div>
+    </div>`).join("");
+}
+
+// ============================================================
+//  SUMMARY STRIP
+// ============================================================
+function renderSummaryStrip(data) {
+  const el = document.getElementById("summaryStrip");
+  if (!el) return;
+  const items = [
+    { lbl:"Unique Meetings", val:fmt(data.summary?.uniqueMeetings), c:"var(--indigo)",  icon:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>` },
+    { lbl:"Unique Users",    val:fmt(data.summary?.uniqueUsers),    c:"var(--emerald)", icon:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>` },
+    { lbl:"Unique Classes",  val:fmt(data.summary?.uniqueClasses),  c:"var(--brand)",   icon:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2.6 9 2.6 12 0v-5"/></svg>` },
+    { lbl:"Unique Teachers", val:fmt(data.summary?.uniqueTeachers), c:"var(--amber)",   icon:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>` }
+  ];
+  el.innerHTML = items.map(s => `
+    <div class="nh-stat">
+      <div class="nh-stat-row"><span style="color:${s.c};">${s.icon}</span><span class="nh-stat-lbl">${s.lbl}</span></div>
+      <div class="nh-stat-val">${s.val}</div>
+    </div>`).join("");
+}
+
+// ============================================================
+//  LIVE ROOMS
+// ============================================================
+const ROOM_CLR  = ["#f1222d","#4f46e5","#0f9d6e","#d97706","#8b5cf6","#0891b2"];
+const ROOM_SOFT = ["#fdecec","#eef0fe","#e6f7f0","#fdf2e3","#f3e8ff","#e0f2fe"];
+
+function renderLiveRooms(data) {
+  const rooms = data.liveRooms || [];
+  document.getElementById("liveCount").textContent = rooms.length + " live";
+  document.getElementById("livePax").textContent = rooms.reduce((s,r) => s+(r.attendeeCount||0),0) + " participants now";
+  const el = document.getElementById("liveRooms");
+  if (!rooms.length) {
+    el.innerHTML = `<div class="nh-empty" style="grid-column:span 2;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto;display:block;opacity:.3;"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+      <h3>No active classes</h3><p>Meetings appear here in real time when they start.</p></div>`;
+    return;
+  }
+  el.innerHTML = rooms.map((r,i) => {
+    const c = ROOM_CLR[i%ROOM_CLR.length], s = ROOM_SOFT[i%ROOM_SOFT.length];
+    return `<div class="nh-room" style="border-left:3px solid ${c};">
+      <div class="nh-room-top">
+        <div class="nh-room-name-grp"><span class="nh-room-dot"></span><span class="nh-room-name">${r.meetingName||r.meetingId||"Unnamed"}</span></div>
+        <span class="nh-room-pill" style="color:${c};background:${s};">LIVE</span>
+      </div>
+      <div class="nh-room-sub">${r.meetingId||"-"} · ${r.teacherId||"No teacher"}</div>
+      <div class="nh-room-stats">
+        <span class="nh-room-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>${r.attendeeCount||0}</span>
+        <span class="nh-room-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>${r.moderatorCount||0} mod</span>
+        <span class="nh-room-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${r.running||"running"}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ============================================================
+//  SIDEBAR
+// ============================================================
+function renderSidebar(data) {
+  const cls = document.getElementById("topClassesList");
+  if (cls) cls.innerHTML = (data.topClasses||[]).slice(0,5).map((it,i) => `
+    <div class="nh-lb-row">
+      <span class="nh-lb-rank">${i+1}</span>
+      <div class="nh-lb-info"><div class="nh-lb-name">${it.className||it.classId||"-"}</div><div class="nh-lb-sub">${it.teachers||0} teachers · ${it.students||0} students</div></div>
+      <span class="nh-lb-val" style="color:var(--brand);">${it.joinEvents||0}</span>
+    </div>`).join("") || noData();
+
+  const tch = document.getElementById("topTeachersList");
+  if (tch) tch.innerHTML = (data.topTeachers||[]).slice(0,5).map(it => `
+    <div class="nh-lb-row">
+      <span class="nh-lb-av" style="background:var(--amberSoft);color:var(--amber);">${initials(it.teacherId)}</span>
+      <div class="nh-lb-info"><div class="nh-lb-name">${it.teacherId||"-"}</div><div class="nh-lb-sub">${it.classes||0} classes · ${it.students||0} students</div></div>
+      <span class="nh-lb-val" style="color:var(--amber);">${it.joinEvents||0}</span>
+    </div>`).join("") || noData();
+
+  const stu = document.getElementById("topStudentsList");
+  if (stu) stu.innerHTML = (data.topStudents||[]).slice(0,5).map(it => `
+    <div class="nh-lb-row">
+      <span class="nh-lb-av" style="background:var(--emeraldSoft);color:var(--emerald);">${initials(it.userName||it.userId)}</span>
+      <div class="nh-lb-info"><div class="nh-lb-name">${it.userName||it.userId||"-"}</div><div class="nh-lb-sub">${it.classes||0} classes · ${it.joins||0} joins</div></div>
+      <span class="nh-lb-val" style="color:var(--emerald);">${it.joins||0}</span>
+    </div>`).join("") || noData();
+}
+
+function noData() { return `<div style="font-size:12px;color:var(--text3);padding:8px 6px;">No data yet</div>`; }
+
+// ============================================================
+//  TABLES
+// ============================================================
+function renderClassesTable(data) {
+  const isFiltered = !!(classFilterState.search || classFilterState.dateFrom || classFilterState.dateTo || classFilterState.results);
+  const filterBar = `
+    <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:13px;padding:12px 14px;background:var(--card2);border:1px solid var(--border);border-radius:11px;">
+      <div class="nh-srch-wrap">
+        <span class="nh-srch-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+        <input type="text" id="clsSearch" class="nh-srch-inp" placeholder="Tìm lớp…" value="${classFilterState.search}" style="width:160px;"/>
+      </div>
+      <span style="font-size:12px;color:var(--text3);">Từ:</span>
+      <input type="date" id="clsFrom" class="nh-hist-inp" value="${classFilterState.dateFrom}" style="height:34px;"/>
+      <span style="font-size:12px;color:var(--text3);">Đến:</span>
+      <input type="date" id="clsTo" class="nh-hist-inp" value="${classFilterState.dateTo}" style="height:34px;"/>
+      <button id="clsApply" class="nh-btn-primary" style="height:34px;padding:0 14px;font-size:12.5px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        Lọc
+      </button>
+      ${isFiltered ? `<button id="clsClear" class="nh-btn-ghost" style="height:34px;font-size:12.5px;">Xoá filter</button>` : ""}
+      ${classFilterState.loading ? `<span style="font-size:12px;color:var(--text3);">Đang tải…</span>` : ""}
+      ${classFilterState.results ? `<span style="font-size:12px;color:var(--emerald);font-weight:600;">${classFilterState.results.pagination.total} kết quả</span>` : ""}
+    </div>`;
+
+  let rows, tblSource;
+  if (classFilterState.results) {
+    tblSource = classFilterState.results.data;
+    rows = tblSource.map(it => `<tr>
+      <td><button class="nh-tlink" data-class-id="${it.classId}">${it.className||it.classId||"-"}</button></td>
+      <td class="nh-muted nh-mono">${fmtDTen(it.createdAt)}</td>
+      <td>${it.teacherCount||0}</td><td>${it.studentCount||0}</td><td>${it.joinEvents||0}</td><td>${it.leaveEvents||0}</td>
+    </tr>`).join("") || `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);">Không tìm thấy lớp nào</td></tr>`;
+  } else {
+    tblSource = data.topClasses || [];
+    rows = tblSource.map(it => `<tr>
+      <td><button class="nh-tlink" data-class-id="${it.classId}">${it.className||it.classId||"-"}</button></td>
+      <td class="nh-muted nh-mono">${fmtDT(it.createdAt)}</td>
+      <td>${it.teachers||0}</td><td>${it.students||0}</td><td>${it.joinEvents||0}</td><td>${it.leaveEvents||0}</td>
+    </tr>`).join("") || `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text3);">No data</td></tr>`;
+  }
+
+  const pgn = classFilterState.results ? (() => {
+    const p = classFilterState.results.pagination;
+    if (p.totalPages <= 1) return "";
+    return `<div class="nh-pgn" style="margin-top:11px;">
+      <span>Trang ${p.page} / ${p.totalPages} · ${p.total} lớp</span>
+      <div style="display:flex;gap:6px;">
+        <button class="nh-pgn-btn cls-page-btn" data-page="${p.page-1}" ${p.page<=1?"disabled":""}>Trước</button>
+        <button class="nh-pgn-btn cls-page-btn" data-page="${p.page+1}" ${p.page>=p.totalPages?"disabled":""}>Sau</button>
+      </div>
+    </div>`;
+  })() : "";
+
+  return filterBar + `<div class="nh-tbl-wrap"><table class="nh-tbl">
+    <thead><tr><th>Lớp</th><th>Ngày tạo</th><th>GV</th><th>HS</th><th>Joins</th><th>Leaves</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>` + pgn;
+}
+
+async function performClassesFilter() {
+  classFilterState.loading = true;
+  renderCurrentView();
+  try {
+    const p = new URLSearchParams();
+    if (classFilterState.search)   p.set("search", classFilterState.search);
+    if (classFilterState.dateFrom) p.set("from",   classFilterState.dateFrom);
+    if (classFilterState.dateTo)   p.set("to",     classFilterState.dateTo);
+    p.set("page", classFilterState.page);
+    p.set("limit", "20");
+    const res = await fetch(`/api/history/classes?${p}`);
+    const js  = await res.json();
+    classFilterState.results = js.ok ? js : { data:[], pagination:{page:1,limit:20,total:0,totalPages:0} };
+  } catch(e) {
+    classFilterState.results = { data:[], pagination:{page:1,limit:20,total:0,totalPages:0} };
+  }
+  classFilterState.loading = false;
+  renderCurrentView();
+}
+
+function bindClassFilterInteractions() {
+  const srch  = document.getElementById("clsSearch");
+  const df    = document.getElementById("clsFrom");
+  const dt    = document.getElementById("clsTo");
+  const apply = document.getElementById("clsApply");
+  const clear = document.getElementById("clsClear");
+
+  if (srch) {
+    srch.oninput    = () => { classFilterState.search = srch.value; };
+    srch.onkeypress = e  => { if (e.key==="Enter") { classFilterState.page=1; performClassesFilter(); } };
+  }
+  if (df) df.onchange = () => { classFilterState.dateFrom = df.value; };
+  if (dt) dt.onchange = () => { classFilterState.dateTo   = dt.value; };
+  if (apply) apply.onclick = () => { classFilterState.page=1; performClassesFilter(); };
+  if (clear) clear.onclick = () => {
+    classFilterState.search=""; classFilterState.dateFrom=""; classFilterState.dateTo="";
+    classFilterState.page=1; classFilterState.results=null;
+    renderCurrentView();
+  };
+  document.querySelectorAll(".cls-page-btn").forEach(b => {
+    b.onclick = () => { const pg=parseInt(b.dataset.page,10); if(pg>=1){ classFilterState.page=pg; performClassesFilter(); } };
+  });
+}
+
+function renderTeachersTable(data) {
+  const rows = (data.topTeachers||[]).map(it => `<tr>
+    <td><button class="nh-tlink" data-teacher-id="${it.teacherId}">${it.teacherId||"-"}</button></td>
+    <td>${it.classes||0}</td><td>${it.students||0}</td><td>${it.joinEvents||0}</td><td>${it.leaveEvents||0}</td>
+  </tr>`).join("") || `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3);">No data</td></tr>`;
+  return `<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Teacher</th><th>Classes</th><th>Students</th><th>Joins</th><th>Leaves</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderStudentsTable(data) {
+  const rows = (data.topStudents||[]).map(it => `<tr>
+    <td><button class="nh-tlink" data-student-id="${it.userId}">${it.userName||it.userId||"-"}</button></td>
+    <td>${it.classes||0}</td><td>${it.teachers||0}</td><td>${it.joins||0}</td><td>${it.leaves||0}</td>
+  </tr>`).join("") || `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3);">No data</td></tr>`;
+  return `<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Student</th><th>Classes</th><th>Teachers</th><th>Joins</th><th>Leaves</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ============================================================
+//  DETAIL PANELS
+// ============================================================
+function activityTable(rows) {
+  if (!rows||!rows.length) return "";
+  return `<div style="margin-top:14px;"><div class="nh-list-hdr">Room Activity</div><div style="overflow-x:auto;"><div class="nh-tbl-wrap"><table class="nh-tbl">
+    <thead><tr><th>Name</th><th>Mod</th><th>Score</th><th>Talk</th><th>Webcam</th><th>Msgs</th><th>React</th><th>Polls</th><th>Hands</th><th>Joined</th><th>Left</th><th>Dur</th></tr></thead>
+    <tbody>${rows.map(it => `<tr>
+      <td>${it.name||"-"}</td><td>${it.moderator?"✓":"-"}</td><td>${it.activityScore??0}</td>
+      <td>${it.talkTime||"-"}</td><td>${it.webcamTime||"-"}</td>
+      <td>${it.messages??0}</td><td>${it.reactions??0}</td><td>${it.pollVotes??0}</td><td>${it.raiseHands??0}</td>
+      <td class="nh-muted nh-mono">${fmtDTen(it.joinAt)}</td>
+      <td class="nh-muted nh-mono">${fmtDTen(it.leftAt)}</td>
+      <td>${it.duration||"-"}</td>
+    </tr>`).join("")}</tbody>
+  </table></div></div></div>`;
+}
+
+function renderClassDetail(data) {
+  const s = data.classDetails.find(x => x.classId===state.selectedClassId) || data.classDetails[0];
+  if (!s) return emptyDetail("No class data available.");
+  state.selectedClassId = s.classId;
+  return `<div class="nh-detail">
+    <div class="nh-detail-hdr">
+      <div><div class="nh-detail-title">${s.className||s.classId}</div><div class="nh-detail-sub nh-mono">${s.classId}</div></div>
+      <span class="nh-detail-pill">${s.totals.joinEvents} joins</span>
+    </div>
+    <div class="nh-metrics">
+      <div class="nh-metric"><div class="nh-metric-lbl">Teachers</div><div class="nh-metric-val">${s.totals.teachers}</div></div>
+      <div class="nh-metric"><div class="nh-metric-lbl">Students</div><div class="nh-metric-val">${s.totals.students}</div></div>
+      <div class="nh-metric"><div class="nh-metric-lbl">Joins</div><div class="nh-metric-val">${s.totals.joinEvents}</div></div>
+      <div class="nh-metric"><div class="nh-metric-lbl">Leaves</div><div class="nh-metric-val">${s.totals.leaveEvents}</div></div>
+    </div>
+    <div class="nh-list-hdr">Teachers</div>
+    ${(s.teachers||[]).map(t => { const tm=(s.meetings||[]).filter(m=>m.teacherId===t.teacherId).length; return `<div class="nh-list-item">
+      <span class="nh-avatar" style="background:var(--amberSoft);color:var(--amber);">${initials(t.teacherName||t.teacherId)}</span>
+      <div><div style="font-size:13px;font-weight:600;">${t.teacherName||t.teacherId||"-"}</div><div style="font-size:11px;color:var(--text3);">${tm} meeting${tm!==1?"s":""}</div></div>
+    </div>`; }).join("") || `<div class="nh-list-item"><span class="nh-muted">No teachers</span></div>`}
+    <div class="nh-list-hdr" style="margin-top:16px;">Top Students</div>
+    ${(s.students||[]).slice(0,6).map(st => `<div class="nh-list-item">
+      <span class="nh-avatar" style="background:var(--emeraldSoft);color:var(--emerald);">${initials(st.userName||st.userId)}</span>
+      <div><div style="font-size:13px;font-weight:600;">${st.userName||st.userId}</div><div style="font-size:11px;color:var(--text3);">${st.joinCount} joins · ${st.leaveCount} leaves</div></div>
+    </div>`).join("") || `<div class="nh-list-item"><span class="nh-muted">No students</span></div>`}
+    ${activityTable(s.participantActivity||[])}
+  </div>`;
+}
+
+function renderTeacherDetail(data) {
+  const s = data.teacherDetails.find(x => x.teacherId===state.selectedTeacherId) || data.teacherDetails[0];
+  if (!s) return emptyDetail("No teachers found.");
+  state.selectedTeacherId = s.teacherId;
+  return `<div class="nh-detail">
+    <div class="nh-detail-hdr">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="nh-avatar" style="width:42px;height:42px;border-radius:12px;background:var(--amberSoft);color:var(--amber);font-size:15px;">${initials(s.teacherId)}</span>
+        <div><div class="nh-detail-title">${s.teacherId}</div><div class="nh-detail-sub">${s.totals.classes} classes</div></div>
+      </div>
+      <span class="nh-detail-pill">${s.totals.joinEvents} joins</span>
+    </div>
+    <div class="nh-metrics">
+      <div class="nh-metric"><div class="nh-metric-lbl">Students</div><div class="nh-metric-val">${s.totals.students}</div></div>
+      <div class="nh-metric"><div class="nh-metric-lbl">Meetings</div><div class="nh-metric-val">${s.totals.meetings}</div></div>
+      <div class="nh-metric"><div class="nh-metric-lbl">Joins</div><div class="nh-metric-val">${s.totals.joinEvents}</div></div>
+      <div class="nh-metric"><div class="nh-metric-lbl">Leaves</div><div class="nh-metric-val">${s.totals.leaveEvents}</div></div>
+    </div>
+    <div class="nh-list-hdr">Classes</div>
+    ${s.classNames.map(cn => `<div class="nh-list-item"><div style="font-size:13px;font-weight:600;">${cn}</div></div>`).join("") || `<div class="nh-list-item"><span class="nh-muted">No classes</span></div>`}
+  </div>`;
+}
+
+function renderStudentDetail(data) {
+  const s = data.studentDetails.find(x => x.userId===state.selectedStudentId) || data.studentDetails[0];
+  if (!s) return emptyDetail("No students found.");
+  state.selectedStudentId = s.userId;
+  return `<div class="nh-detail">
+    <div class="nh-detail-hdr">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="nh-avatar" style="width:42px;height:42px;border-radius:12px;background:var(--emeraldSoft);color:var(--emerald);font-size:15px;">${initials(s.userName||s.userId)}</span>
+        <div><div class="nh-detail-title">${s.userName||s.userId}</div><div class="nh-detail-sub nh-mono">${s.userId}</div></div>
+      </div>
+      <span class="nh-detail-pill">${s.totals.joins} joins</span>
+    </div>
+    <div class="nh-metrics">
+      <div class="nh-metric"><div class="nh-metric-lbl">Classes</div><div class="nh-metric-val">${s.classIds.length}</div></div>
+      <div class="nh-metric"><div class="nh-metric-lbl">Teachers</div><div class="nh-metric-val">${s.teacherIds.length}</div></div>
+      <div class="nh-metric"><div class="nh-metric-lbl">Joins</div><div class="nh-metric-val">${s.totals.joins}</div></div>
+      <div class="nh-metric"><div class="nh-metric-lbl">Leaves</div><div class="nh-metric-val">${s.totals.leaves}</div></div>
+    </div>
+    <div class="nh-list-hdr">Related Classes</div>
+    ${s.classNames.map(cn => `<div class="nh-list-item"><div style="font-size:13px;font-weight:600;">${cn}</div></div>`).join("") || `<div class="nh-list-item"><span class="nh-muted">No related classes</span></div>`}
+  </div>`;
+}
+
+function emptyDetail(msg) {
+  return `<div class="nh-detail nh-empty"><h3>${msg}</h3></div>`;
+}
+
+// ============================================================
+//  HISTORY
+// ============================================================
+function renderHistorySearchForm() {
+  return `<div>
+    <div class="nh-hist-row">
+      <select id="historySearchType" class="nh-hist-sel">
+        <option value="classes"  ${historyState.searchType==="classes"  ?"selected":""}>Classes</option>
+        <option value="teachers" ${historyState.searchType==="teachers" ?"selected":""}>Teachers</option>
+        <option value="students" ${historyState.searchType==="students" ?"selected":""}>Students</option>
+        <option value="meetings" ${historyState.searchType==="meetings" ?"selected":""}>Meetings</option>
+        <option value="events"   ${historyState.searchType==="events"   ?"selected":""}>Events</option>
+      </select>
+      <div class="nh-srch-wrap">
+        <span class="nh-srch-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+        <input type="text" id="historySearchQuery" class="nh-srch-inp" placeholder="Search…" value="${historyState.searchQuery}"/>
+      </div>
+    </div>
+    <div class="nh-hist-row" style="margin-bottom:14px;">
+      <span style="font-size:12px;color:var(--text3);">From:</span>
+      <input type="date" id="historyDateFrom" class="nh-hist-inp" value="${historyState.dateFrom}"/>
+      <span style="font-size:12px;color:var(--text3);">To:</span>
+      <input type="date" id="historyDateTo" class="nh-hist-inp" value="${historyState.dateTo}"/>
+      <button id="historySearchBtn" class="nh-btn-primary" style="height:36px;padding:0 16px;font-size:13px;">Search</button>
+      <button id="historyClearBtn" class="nh-btn-ghost" style="height:36px;">Clear</button>
+    </div>
+    ${historyState.loading?"<div class=\"nh-muted\" style=\"padding:14px;\">Loading…</div>":""}
+    ${renderHistoryResults()}
+  </div>`;
+}
+
+function renderHistoryResults() {
+  if (!historyState.results) return `<div class="nh-empty"><h3>Enter search criteria above</h3><p>Search for historical classes, teachers, students, meetings, or events.</p></div>`;
+  const { data, pagination } = historyState.results;
+  if (!data||!data.length) return `<div class="nh-empty"><h3>No data found</h3><p>Try adjusting your search criteria.</p></div>`;
+
+  const live = `<span class="nh-s-live"><span></span>Running</span>`;
+  let tbl = "";
+  if (historyState.searchType==="classes") {
+    tbl=`<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Class</th><th>Teachers</th><th>Students</th><th>Meetings</th><th>Joins</th><th>Created</th><th>Last Ended</th></tr></thead><tbody>
+    ${data.map(it=>`<tr><td><strong>${it.className||it.classId}</strong></td><td>${it.teacherCount}</td><td>${it.studentCount}</td><td>${it.meetingCount}</td><td>${it.joinEvents}</td><td class="nh-muted nh-mono">${fmtDTen(it.createdAt)}</td><td>${it.lastEndedAt?`<span class="nh-muted nh-mono">${fmtDTen(it.lastEndedAt)}</span>`:live}</td></tr>`).join("")}
+    </tbody></table></div>`;
+  } else if (historyState.searchType==="teachers") {
+    tbl=`<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Teacher</th><th>Classes</th><th>Students</th><th>Meetings</th><th>Joins</th><th>Created</th></tr></thead><tbody>
+    ${data.map(it=>`<tr><td><strong>${it.teacherName||it.teacherId}</strong></td><td>${it.classCount}</td><td>${it.studentCount}</td><td>${it.meetingCount}</td><td>${it.joinEvents}</td><td class="nh-muted nh-mono">${fmtDTen(it.createdAt)}</td></tr>`).join("")}
+    </tbody></table></div>`;
+  } else if (historyState.searchType==="students") {
+    tbl=`<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Student</th><th>ID</th><th>Classes</th><th>Joins</th><th>Leaves</th><th>Created</th></tr></thead><tbody>
+    ${data.map(it=>`<tr><td><strong>${it.userName||it.userId}</strong></td><td class="nh-mono">${it.userId}</td><td>${it.classCount}</td><td>${it.totalJoins}</td><td>${it.totalLeaves}</td><td class="nh-muted nh-mono">${fmtDTen(it.createdAt)}</td></tr>`).join("")}
+    </tbody></table></div>`;
+  } else if (historyState.searchType==="meetings") {
+    tbl=`<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Meeting</th><th>Class</th><th>Teacher</th><th>Participants</th><th>Joins</th><th>Started</th><th>Ended</th></tr></thead><tbody>
+    ${data.map(it=>`<tr><td><strong>${it.meetingName||it.meetingId}</strong></td><td>${it.classId||"-"}</td><td>${it.teacherId||"-"}</td><td>${it.participantCount}</td><td>${it.joinEvents}</td><td class="nh-muted nh-mono">${fmtDTen(it.startedAt)}</td><td>${it.endedAt?`<span class="nh-muted nh-mono">${fmtDTen(it.endedAt)}</span>`:live}</td></tr>`).join("")}
+    </tbody></table></div>`;
+  } else if (historyState.searchType==="events") {
+    tbl=`<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Event</th><th>Meeting</th><th>User</th><th>Class</th><th>Timestamp</th></tr></thead><tbody>
+    ${data.map(it=>`<tr><td><span class="nh-chip">${it.eventName}</span></td><td class="nh-mono">${it.meetingId||"-"}</td><td>${it.userName||it.userId||"-"}</td><td>${it.classId||"-"}</td><td class="nh-muted nh-mono">${fmtDTen(it.timestamp)}</td></tr>`).join("")}
+    </tbody></table></div>`;
+  }
+
+  const pgn = pagination ? `<div class="nh-pgn">
+    <span>Page ${pagination.page} of ${pagination.totalPages} · ${pagination.total} total</span>
+    <div style="display:flex;gap:6px;">
+      <button class="nh-pgn-btn history-page-btn" data-page="${pagination.page-1}" ${pagination.page<=1?"disabled":""}>Prev</button>
+      <button class="nh-pgn-btn history-page-btn" data-page="${pagination.page+1}" ${pagination.page>=pagination.totalPages?"disabled":""}>Next</button>
+    </div></div>` : "";
+
+  return tbl + pgn;
+}
+
+function bindHistoryInteractions() {
+  const sel=document.getElementById("historySearchType"),
+        qry=document.getElementById("historySearchQuery"),
+        df =document.getElementById("historyDateFrom"),
+        dt =document.getElementById("historyDateTo"),
+        go =document.getElementById("historySearchBtn"),
+        cl =document.getElementById("historyClearBtn");
+  if(sel) sel.onchange=()=>{historyState.searchType=sel.value;historyState.page=1;historyState.results=null;renderCurrentView();};
+  if(qry){qry.oninput=()=>{historyState.searchQuery=qry.value;};qry.onkeypress=e=>{if(e.key==="Enter"){historyState.page=1;performHistorySearch();}};}
+  if(df) df.onchange=()=>{historyState.dateFrom=df.value;};
+  if(dt) dt.onchange=()=>{historyState.dateTo=dt.value;};
+  if(go) go.onclick=()=>{historyState.page=1;performHistorySearch();};
+  if(cl) cl.onclick=()=>{historyState.searchQuery="";historyState.dateFrom="";historyState.dateTo="";historyState.page=1;historyState.results=null;renderCurrentView();};
+  document.querySelectorAll(".history-page-btn").forEach(b=>{b.onclick=()=>{const p=parseInt(b.dataset.page,10);if(p>=1){historyState.page=p;performHistorySearch();}};});
+}
+
+async function performHistorySearch() {
+  historyState.loading=true; renderCurrentView();
+  try {
+    const p=new URLSearchParams();
+    if(historyState.searchQuery) p.set("search",historyState.searchQuery);
+    if(historyState.dateFrom)    p.set("from",historyState.dateFrom);
+    if(historyState.dateTo)      p.set("to",historyState.dateTo);
+    p.set("page",historyState.page); p.set("limit","20");
+    const res=await fetch(`/api/history/${historyState.searchType}?${p}`);
+    const js=await res.json();
+    historyState.results=js.ok?js:{data:[],pagination:{page:1,limit:20,total:0,totalPages:0}};
+  } catch(e) { historyState.results={data:[],pagination:{page:1,limit:20,total:0,totalPages:0}}; }
+  historyState.loading=false; renderCurrentView();
+}
+
+// ============================================================
+//  INTERACTIONS
+// ============================================================
+function bindInteractions() {
+  document.querySelectorAll("[data-tab]").forEach(b=>{b.onclick=()=>{state.activeTab=b.dataset.tab;renderCurrentView();};});
+  document.querySelectorAll("[data-class-id]").forEach(b=>{b.onclick=()=>{state.selectedClassId=b.dataset.classId;renderCurrentView();};});
+  document.querySelectorAll("[data-teacher-id]").forEach(b=>{b.onclick=()=>{state.selectedTeacherId=b.dataset.teacherId;renderCurrentView();};});
+  document.querySelectorAll("[data-student-id]").forEach(b=>{b.onclick=()=>{state.selectedStudentId=b.dataset.studentId;renderCurrentView();};});
+}
+
+// ============================================================
+//  CHARTS
+// ============================================================
+function destroyCharts() {
+  Object.values(chartInstances).forEach(c=>c&&c.destroy());
+  Object.keys(chartInstances).forEach(k=>delete chartInstances[k]);
+}
+
+function renderCharts(data) {
+  if (!data.chartData) return;
+  destroyCharts();
+  const cd=data.chartData, ac="#f1222d", as="rgba(241,34,45,.13)";
+  const colors=["#f1222d","#4f46e5","#0f9d6e","#d97706","#8b5cf6","#0891b2"];
+
+  const mCtx=document.getElementById("meetingActivityChart");
+  if(mCtx&&cd.meetingActivityByDay) chartInstances.meetingActivity=new Chart(mCtx,{type:"line",data:{labels:cd.meetingActivityByDay.labels.map(d=>d.split("-").slice(1).join("/")),datasets:[{label:"Meetings",data:cd.meetingActivityByDay.meetings,borderColor:ac,backgroundColor:as,tension:.3,fill:false},{label:"Joins",data:cd.meetingActivityByDay.joins,borderColor:"#0f9d6e",backgroundColor:"rgba(15,157,110,.1)",tension:.3,fill:false},{label:"Leaves",data:cd.meetingActivityByDay.leaves,borderColor:"#d97706",backgroundColor:"rgba(217,119,6,.1)",tension:.3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:12}}},scales:{y:{beginAtZero:true}}}});
+
+  const pCtx=document.getElementById("peakUsageChart");
+  if(pCtx&&cd.peakUsageHours){const mx=Math.max(...cd.peakUsageHours.counts);chartInstances.peakUsage=new Chart(pCtx,{type:"bar",data:{labels:cd.peakUsageHours.labels,datasets:[{label:"Joins",data:cd.peakUsageHours.counts,backgroundColor:cd.peakUsageHours.counts.map(v=>v===mx?ac:as),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});}
+
+  const dCtx=document.getElementById("durationTrendChart");
+  if(dCtx&&cd.classDurationTrend&&cd.classDurationTrend.labels.length) chartInstances.durationTrend=new Chart(dCtx,{type:"line",data:{labels:cd.classDurationTrend.labels.map(d=>d.split("-").slice(1).join("/")),datasets:[{label:"Avg Duration (min)",data:cd.classDurationTrend.avgDurations,borderColor:ac,backgroundColor:as,tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+
+  const paCtx=document.getElementById("participantChart");
+  if(paCtx&&cd.participantDistribution) chartInstances.participant=new Chart(paCtx,{type:"doughnut",data:{labels:["Teachers","Students"],datasets:[{data:[cd.participantDistribution.teachers,cd.participantDistribution.students],backgroundColor:[ac,"#0f9d6e"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:12}}},cutout:"60%"}});
+
+  const etCtx=document.getElementById("eventTypeChart");
+  if(etCtx&&cd.eventTypeBreakdown){const e=cd.eventTypeBreakdown;chartInstances.eventType=new Chart(etCtx,{type:"doughnut",data:{labels:["Joins","Leaves","Messages","Reactions","Polls","Hands"],datasets:[{data:[e.joins,e.leaves,e.messages,e.reactions,e.pollVotes,e.raiseHands],backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}}},cutout:"55%"}});}
+
+  const twCtx=document.getElementById("teacherWorkloadChart");
+  if(twCtx&&cd.teacherWorkload&&cd.teacherWorkload.length) chartInstances.teacherWorkload=new Chart(twCtx,{type:"doughnut",data:{labels:cd.teacherWorkload.map(t=>t.name.length>12?t.name.slice(0,12)+"…":t.name),datasets:[{data:cd.teacherWorkload.map(t=>t.classes),backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}}},cutout:"55%"}});
+}
+
+// ============================================================
+//  MAIN RENDER
+// ============================================================
+function renderCurrentView() {
+  const data=state.stats;
+  if(!data) return;
+  renderHeroOrbs(data);
+  renderSummaryStrip(data);
+  renderLiveRooms(data);
+  renderCharts(data);
+  renderSidebar(data);
+
+  document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===state.activeTab));
+
+  const tc=document.getElementById("tabContent"),dp=document.getElementById("detailPanel");
+  if(state.activeTab==="classes"){tc.innerHTML=renderClassesTable(data);dp.innerHTML=renderClassDetail(data);bindClassFilterInteractions();}
+  else if(state.activeTab==="teachers"){tc.innerHTML=renderTeachersTable(data);dp.innerHTML=renderTeacherDetail(data);}
+  else if(state.activeTab==="history"){tc.innerHTML=renderHistorySearchForm();dp.innerHTML="";bindHistoryInteractions();}
+  else{tc.innerHTML=renderStudentsTable(data);dp.innerHTML=renderStudentDetail(data);}
+
+  bindInteractions();
+}
+
+function hydrateSelection(data) {
+  if(!state.selectedClassId   && data.classDetails[0])   state.selectedClassId   = data.classDetails[0].classId;
+  if(!state.selectedTeacherId && data.teacherDetails[0]) state.selectedTeacherId = data.teacherDetails[0].teacherId;
+  if(!state.selectedStudentId && data.studentDetails[0]) state.selectedStudentId = data.studentDetails[0].userId;
+}
+
+async function loadStats() {
+  const res=await fetch("/api/stats"), data=await res.json();
+  state.stats=data; hydrateSelection(data); renderCurrentView();
+}
+
+async function postJson(url, payload) {
+  const res=await fetch(url,{method:"POST",headers:payload?{"Content-Type":"application/json"}:undefined,body:payload?JSON.stringify(payload):undefined});
+  return res.json();
+}
+
+function connectRealtime() {
+  eventSource=new EventSource("/api/stream");
+  eventSource.addEventListener("stats",ev=>{state.stats=JSON.parse(ev.data);hydrateSelection(state.stats);renderCurrentView();});
+}
+
+// ============================================================
+//  BOOT
+// ============================================================
+initTheme();
+
+document.getElementById("themeToggle").addEventListener("click", toggleTheme);
+
+document.getElementById("resetButton").addEventListener("click", async () => {
+  if(confirm("Reset all data? This cannot be undone.")) await postJson("/api/reset");
+});
+
+document.getElementById("registerHookBtn").addEventListener("click", async () => {
+  try { const r=await postJson("/api/hooks/register"); alert(r.message||"Hook registered."); }
+  catch(e) { alert("Failed to register hook."); }
+});
+
+document.querySelectorAll("[data-chart]").forEach(b => {
+  b.addEventListener("click", () => switchChartTab(b.dataset.chart));
+});
+
+loadStats();
+connectRealtime();
+</script>
+</body>
 </html>
