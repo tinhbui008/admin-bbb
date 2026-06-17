@@ -42,11 +42,13 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
   const params = [];
   let paramIndex = 1;
 
-  // Filter out orphan classes with no activity
-  conditions.push(`(
-    (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) > 0
-    OR (SELECT COUNT(DISTINCT cs.user_id) FROM class_students cs WHERE cs.class_id = c.class_id) > 0
-  )`);
+  // Only filter out orphan classes (no activity) when not searching by name/id
+  if (!search) {
+    conditions.push(`(
+      (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) > 0
+      OR (SELECT COUNT(DISTINCT cs.user_id) FROM class_students cs WHERE cs.class_id = c.class_id) > 0
+    )`);
+  }
 
   if (search) {
     conditions.push(`(c.class_id ILIKE $${paramIndex} OR c.class_name ILIKE $${paramIndex})`);
@@ -216,6 +218,18 @@ async function incrementClassStudentLeave(classId, userId) {
   );
 }
 
+async function deleteClass(classId) {
+  await db.query(
+    `DELETE FROM meeting_participants WHERE meeting_id IN (SELECT meeting_id FROM meetings WHERE class_id = $1)`,
+    [classId]
+  );
+  await db.query(`DELETE FROM meetings WHERE class_id = $1`, [classId]);
+  await db.query(`DELETE FROM class_students WHERE class_id = $1`, [classId]);
+  await db.query(`DELETE FROM class_teachers WHERE class_id = $1`, [classId]);
+  await db.query(`DELETE FROM live_rooms WHERE class_id = $1`, [classId]);
+  await db.query(`DELETE FROM classes WHERE class_id = $1`, [classId]);
+}
+
 module.exports = {
   upsertClass,
   getClassById,
@@ -224,5 +238,6 @@ module.exports = {
   getClassDetails,
   addClassTeacher,
   addClassStudent,
-  incrementClassStudentLeave
+  incrementClassStudentLeave,
+  deleteClass
 };

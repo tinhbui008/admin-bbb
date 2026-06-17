@@ -456,7 +456,7 @@ const historyState = {
 };
 
 const classFilterState = {
-  search: "", dateFrom: getTodayDate(), dateTo: getTodayDate(),
+  search: "", dateFrom: "", dateTo: "",
   page: 1, results: null, loading: false
 };
 
@@ -847,6 +847,26 @@ function bindClassFilterInteractions() {
       });
     };
   });
+  document.querySelectorAll(".cls-delete-btn").forEach(b => {
+    b.onclick = async () => {
+      const cid   = b.getAttribute("data-delete-class-id");
+      const cname = b.getAttribute("data-delete-class-name");
+      if (!confirm(`Xóa class "${cname}"?\n\nHành động này sẽ xóa toàn bộ meetings và participants liên quan. Không thể hoàn tác.`)) return;
+      try {
+        const res = await fetch(`/api/classes/${encodeURIComponent(cid)}`, { method: "DELETE" });
+        const js  = await res.json();
+        if (js.ok) {
+          state.selectedClassId = null;
+          classFilterState.results = null;
+          await loadStats();
+        } else {
+          alert("Xóa thất bại: " + (js.error || "Unknown error"));
+        }
+      } catch (e) {
+        alert("Xóa thất bại: " + e.message);
+      }
+    };
+  });
 }
 
 function renderTeachersTable(data) {
@@ -890,7 +910,13 @@ function renderClassDetail(data) {
   return `<div class="nh-detail">
     <div class="nh-detail-hdr">
       <div><div class="nh-detail-title">${s.className||s.classId}</div></div>
-      <span class="nh-detail-pill">${s.totals.joinEvents} joins</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="nh-detail-pill">${s.totals.joinEvents} joins</span>
+        <button class="nh-btn-ghost cls-delete-btn" data-delete-class-id="${s.classId}" data-delete-class-name="${(s.className||s.classId).replace(/"/g,'&quot;')}" style="height:28px;padding:0 10px;font-size:11.5px;color:var(--brand);border-color:var(--brand);gap:5px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete
+        </button>
+      </div>
     </div>
     <div class="nh-metrics">
       <div class="nh-metric"><div class="nh-metric-lbl">Teachers</div><div class="nh-metric-val">${s.totals.teachers}</div></div>

@@ -247,6 +247,22 @@ async function handleDestroyHook(req, res) {
   }
 }
 
+async function handleDeleteClass(classId, res) {
+  try {
+    const existing = await classesDb.getClassById(classId);
+    if (!existing) {
+      sendJson(res, 404, { ok: false, error: "Class not found" });
+      return;
+    }
+    await classesDb.deleteClass(classId);
+    const stats = await buildStats({ skipLiveSync: true });
+    pushRealtimeUpdate("stats", stats);
+    sendJson(res, 200, { ok: true, message: "Class deleted" });
+  } catch (error) {
+    sendJson(res, 500, { ok: false, error: error.message });
+  }
+}
+
 async function handleClassDetail(classId, res) {
   try {
     const classDetail = await classesDb.getClassDetails(classId);
@@ -332,6 +348,12 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "POST" && parsedUrl.pathname === "/api/reset") {
     await handleReset(res);
+    return;
+  }
+
+  const classDeleteMatch = req.method === "DELETE" && parsedUrl.pathname.match(/^\/api\/classes\/(.+)$/);
+  if (classDeleteMatch) {
+    await handleDeleteClass(decodeURIComponent(classDeleteMatch[1]), res);
     return;
   }
 
