@@ -60,11 +60,11 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
     params.push(teacherId);
   }
   if (from) {
-    conditions.push(`EXISTS (SELECT 1 FROM meetings m WHERE m.class_id = c.class_id AND m.started_at >= $${paramIndex++}::date)`);
+    conditions.push(`c.updated_at >= $${paramIndex++}::date`);
     params.push(from);
   }
   if (to) {
-    conditions.push(`EXISTS (SELECT 1 FROM meetings m WHERE m.class_id = c.class_id AND m.started_at < ($${paramIndex++}::date + interval '1 day'))`);
+    conditions.push(`c.updated_at < ($${paramIndex++}::date + interval '1 day')`);
     params.push(to);
   }
 
