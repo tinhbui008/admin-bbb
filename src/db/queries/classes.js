@@ -60,13 +60,16 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
     conditions.push(`EXISTS (SELECT 1 FROM class_teachers ct WHERE ct.class_id = c.class_id AND ct.teacher_id = $${paramIndex++})`);
     params.push(teacherId);
   }
-  if (from) {
-    conditions.push(`c.updated_at >= $${paramIndex++}::date`);
-    params.push(from);
-  }
-  if (to) {
-    conditions.push(`c.updated_at < ($${paramIndex++}::date + interval '1 day')`);
-    params.push(to);
+  // Skip date filter when searching by name — user wants to find a specific class regardless of date
+  if (!search) {
+    if (from) {
+      conditions.push(`c.updated_at >= $${paramIndex++}::date`);
+      params.push(from);
+    }
+    if (to) {
+      conditions.push(`c.updated_at < ($${paramIndex++}::date + interval '1 day')`);
+      params.push(to);
+    }
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
