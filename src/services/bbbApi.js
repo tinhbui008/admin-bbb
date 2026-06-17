@@ -92,7 +92,7 @@ async function callBbbApi(callName, extraParams = {}) {
     const parsed = new URL(endpoint);
     const lib = parsed.protocol === "https:" ? https : http;
     const req = lib.request(
-      { hostname: parsed.hostname, path: parsed.pathname + parsed.search, method: "GET", headers },
+      { hostname: parsed.hostname, path: parsed.pathname + parsed.search, method: "GET", headers, insecureHTTPParser: true },
       (res) => {
         let data = "";
         res.on("data", chunk => { data += chunk.toString("utf8"); });
