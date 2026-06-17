@@ -1,4 +1,7 @@
 const crypto = require("crypto");
+const https = require("https");
+const http = require("http");
+const { URL } = require("url");
 const CONFIG = require("../config");
 const webhookStatusDb = require("../db/queries/webhookStatus");
 const liveRoomsDb = require("../db/queries/liveRooms");
@@ -82,12 +85,29 @@ async function callBbbApi(callName, extraParams = {}) {
     headers.Authorization = `Bearer ${CONFIG.bbbSharedSecret}`;
   }
 
-  const response = await fetch(endpoint, { headers });
-  const xml = await response.text();
-
-  if (!response.ok) {
-    throw new Error(`BBB API HTTP ${response.status}: ${xml}`);
-  }
+  // Use https.request instead of fetch — BBB's hooks/create endpoint returns
+  // LF-only header endings (HTTP/1.1 non-compliant), which undici (native fetch)
+  // rejects. The https module is lenient about this.
+  const xml = await new Promise((resolve, reject) => {
+    const parsed = new URL(endpoint);
+    const lib = parsed.protocol === "https:" ? https : http;
+    const req = lib.request(
+      { hostname: parsed.hostname, path: parsed.pathname + parsed.search, method: "GET", headers },
+      (res) => {
+        let data = "";
+        res.on("data", chunk => { data += chunk.toString("utf8"); });
+        res.on("end", () => {
+          if (res.statusCode >= 400) {
+            reject(new Error(`BBB API HTTP ${res.statusCode}: ${data}`));
+          } else {
+            resolve(data);
+          }
+        });
+      }
+    );
+    req.on("error", reject);
+    req.end();
+  });
 
   const returnCode = parseXmlTag(xml, "returncode");
   const messageKey = parseXmlTag(xml, "messageKey");
