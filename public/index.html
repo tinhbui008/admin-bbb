@@ -448,6 +448,7 @@ const state = {
 };
 
 function getTodayDate() { return new Date().toISOString().split("T")[0]; }
+function getYesterdayDate() { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; }
 
 const historyState = {
   searchType: "classes", searchQuery: "",
@@ -456,7 +457,7 @@ const historyState = {
 };
 
 const classFilterState = {
-  search: "", dateFrom: "", dateTo: "",
+  search: "", dateFrom: getYesterdayDate(), dateTo: getTodayDate(),
   page: 1, results: null, loading: false
 };
 
