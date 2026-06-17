@@ -1,20 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: bbb-admin-nihaoma-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: bbb_admin
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 14a3b3aeb9800c969c8723292e9f3a3ddbd37c59032303c3
-    volumes:
-      - bbb_admin_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d bbb_admin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   bbb-admin:
     build:
       context: .
@@ -25,9 +9,7 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql://postgres:14a3b3aeb9800c969c8723292e9f3a3ddbd37c59032303c3@postgres:5432/bbb_admin
-    depends_on:
-      postgres:
-        condition: service_healthy
+    depends_on: []
     extra_hosts:
       - "class.nihaoma-mandarin.com:host-gateway"
     ports:
@@ -40,7 +22,12 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    networks:
+      - greenlight-v3_default
 
 volumes:
   bbb_admin_data:
-  bbb_admin_postgres_data:
+
+networks:
+  greenlight-v3_default:
+    external: true
