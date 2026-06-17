@@ -42,8 +42,9 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
   const params = [];
   let paramIndex = 1;
 
-  // Only filter out orphan classes (no activity) when not searching by name/id
-  if (!search) {
+  // Apply activity filter only when a date range is given (to hide orphans in ranged view)
+  // When searching by name or fetching all (no date, no search): show everything
+  if (!search && (from || to)) {
     conditions.push(`(
       (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) > 0
       OR (SELECT COUNT(DISTINCT cs.user_id) FROM class_students cs WHERE cs.class_id = c.class_id) > 0
