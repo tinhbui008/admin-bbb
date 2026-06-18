@@ -72,11 +72,13 @@ function isMessageEvent(eventName) {
 }
 
 function isReactionEvent(eventName) {
-  return /reaction/i.test(String(eventName || ""));
+  // BBB sends "user-emoji-changed" for emoji reactions (not raise-hand, which has its own event)
+  return /reaction|emoji.?changed/i.test(String(eventName || ""));
 }
 
 function isPollVoteEvent(eventName) {
-  return /poll.*vote|vote.*poll/i.test(String(eventName || ""));
+  // BBB sends "poll-responded" when a user votes in a poll
+  return /poll.*vote|vote.*poll|poll.?responded/i.test(String(eventName || ""));
 }
 
 function isRaiseHandEvent(eventName) {
@@ -84,19 +86,23 @@ function isRaiseHandEvent(eventName) {
 }
 
 function isWebcamStartEvent(eventName) {
-  return /webcam.*start|start.*webcam|shared-webcam-started|camera.*start/i.test(String(eventName || ""));
+  // BBB sends "user-cam-broadcast-start" when webcam is turned on
+  return /webcam.*start|start.*webcam|shared-webcam-started|camera.*start|cam.*broadcast.*start/i.test(String(eventName || ""));
 }
 
 function isWebcamStopEvent(eventName) {
-  return /webcam.*stop|stop.*webcam|shared-webcam-stopped|camera.*stop/i.test(String(eventName || ""));
+  // BBB sends "user-cam-broadcast-end" when webcam is turned off
+  return /webcam.*stop|stop.*webcam|shared-webcam-stopped|camera.*stop|cam.*broadcast.*end/i.test(String(eventName || ""));
 }
 
 function isTalkStartEvent(eventName) {
-  return /talk.*start|start.*talk|voice.*start|started-talking/i.test(String(eventName || ""));
+  // BBB sends "user-audio-voice-enabled" when voice activity is detected (user speaking)
+  return /talk.*start|start.*talk|voice.*start|started-talking|audio.*voice.*enabled/i.test(String(eventName || ""));
 }
 
 function isTalkStopEvent(eventName) {
-  return /talk.*stop|stop.*talk|voice.*stop|stopped-talking/i.test(String(eventName || ""));
+  // BBB sends "user-audio-voice-disabled" when user stops speaking
+  return /talk.*stop|stop.*talk|voice.*stop|stopped-talking|audio.*voice.*disabled/i.test(String(eventName || ""));
 }
 
 function isModeratorRole(role) {
