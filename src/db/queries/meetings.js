@@ -200,6 +200,11 @@ async function updateParticipantLeft(meetingId, userId, leftAt) {
   await db.query(
     `UPDATE meeting_participants SET
        left_at = $3,
+       duration_ms = CASE
+         WHEN join_at IS NOT NULL
+         THEN GREATEST(0, EXTRACT(EPOCH FROM ($3::timestamptz - join_at)) * 1000)::bigint
+         ELSE duration_ms
+       END,
        updated_at = NOW()
      WHERE meeting_id = $1 AND user_id = $2`,
     [meetingId, userId, leftAt]

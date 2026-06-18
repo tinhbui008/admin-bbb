@@ -22,8 +22,17 @@ const {
   isReactionEvent,
   isPollVoteEvent,
   isRaiseHandEvent,
+  isWebcamStartEvent,
+  isWebcamStopEvent,
+  isTalkStartEvent,
+  isTalkStopEvent,
   isModeratorRole
 } = require("../utils/helpers");
+
+// In-memory state for tracking start times of talk/webcam segments.
+// Key: `${meetingId}:${userId}`. Cleared when meeting ends.
+const talkStartTimes = new Map();
+const webcamStartTimes = new Map();
 
 async function processWebhookPayload(rawBody, contentType, checksumValid) {
   const parsed = parseIncomingBody(rawBody, contentType);
@@ -99,6 +108,13 @@ async function processEvent(normalized, checksumValid) {
     await statsDb.incrementStat("meetings_ended");
     if (normalized.meetingId) {
       await meetingsDb.incrementMeetingEnded(normalized.meetingId);
+      // Clear any pending talk/webcam start times for this meeting
+      for (const key of talkStartTimes.keys()) {
+        if (key.startsWith(`${normalized.meetingId}:`)) talkStartTimes.delete(key);
+      }
+      for (const key of webcamStartTimes.keys()) {
+        if (key.startsWith(`${normalized.meetingId}:`)) webcamStartTimes.delete(key);
+      }
     }
   }
 
@@ -170,6 +186,32 @@ async function processEvent(normalized, checksumValid) {
 
   if (isRaiseHandEvent(normalized.eventName) && normalized.meetingId && normalized.userId) {
     await meetingsDb.incrementParticipantActivity(normalized.meetingId, normalized.userId, "raise_hands");
+  }
+
+  if (isTalkStartEvent(normalized.eventName) && normalized.meetingId && normalized.userId) {
+    talkStartTimes.set(`${normalized.meetingId}:${normalized.userId}`, Date.now());
+  }
+
+  if (isTalkStopEvent(normalized.eventName) && normalized.meetingId && normalized.userId) {
+    const key = `${normalized.meetingId}:${normalized.userId}`;
+    const startMs = talkStartTimes.get(key);
+    if (startMs) {
+      talkStartTimes.delete(key);
+      await meetingsDb.addParticipantTalkTime(normalized.meetingId, normalized.userId, Date.now() - startMs);
+    }
+  }
+
+  if (isWebcamStartEvent(normalized.eventName) && normalized.meetingId && normalized.userId) {
+    webcamStartTimes.set(`${normalized.meetingId}:${normalized.userId}`, Date.now());
+  }
+
+  if (isWebcamStopEvent(normalized.eventName) && normalized.meetingId && normalized.userId) {
+    const key = `${normalized.meetingId}:${normalized.userId}`;
+    const startMs = webcamStartTimes.get(key);
+    if (startMs) {
+      webcamStartTimes.delete(key);
+      await meetingsDb.addParticipantWebcamTime(normalized.meetingId, normalized.userId, Date.now() - startMs);
+    }
   }
 
   return { eventName: normalized.eventName, processed: true };
