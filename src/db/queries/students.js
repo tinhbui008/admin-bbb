@@ -175,9 +175,9 @@ async function getStudentDetails(userId) {
       classId: p.class_id,
       joinAt: p.join_at,
       leftAt: p.left_at,
-      durationMs: p.duration_ms,
-      talkTimeMs: p.talk_time_ms,
-      webcamTimeMs: p.webcam_time_ms,
+      durationMs: Number(p.duration_ms) || 0,
+      talkTimeMs: Number(p.talk_time_ms) || 0,
+      webcamTimeMs: Number(p.webcam_time_ms) || 0,
       messages: p.messages,
       reactions: p.reactions
     })),
