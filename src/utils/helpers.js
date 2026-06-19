@@ -96,13 +96,15 @@ function isWebcamStopEvent(eventName) {
 }
 
 function isTalkStartEvent(eventName) {
-  // BBB sends "user-audio-voice-enabled" when voice activity is detected (user speaking)
-  return /talk.*start|start.*talk|voice.*start|started-talking|audio.*voice.*enabled/i.test(String(eventName || ""));
+  // user-audio-unmuted: user explicitly opens mic (primary, reliable)
+  // user-audio-voice-enabled: BBB VAD fires when voice detected (may fire even when muted)
+  return /audio.*unmuted|audio.*voice.*enabled/i.test(String(eventName || ""));
 }
 
 function isTalkStopEvent(eventName) {
-  // BBB sends "user-audio-voice-disabled" when user stops speaking
-  return /talk.*stop|stop.*talk|voice.*stop|stopped-talking|audio.*voice.*disabled/i.test(String(eventName || ""));
+  // "audio-muted" matches "user-audio-muted" but NOT "user-audio-unmuted" (different substring)
+  // user-audio-voice-disabled: BBB VAD stop (not always reliable — sometimes never fires)
+  return /audio-muted|audio.*voice.*disabled/i.test(String(eventName || ""));
 }
 
 function isModeratorRole(role) {

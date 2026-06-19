@@ -108,12 +108,21 @@ async function processEvent(normalized, checksumValid) {
     await statsDb.incrementStat("meetings_ended");
     if (normalized.meetingId) {
       await meetingsDb.incrementMeetingEnded(normalized.meetingId);
-      // Clear any pending talk/webcam start times for this meeting
-      for (const key of talkStartTimes.keys()) {
-        if (key.startsWith(`${normalized.meetingId}:`)) talkStartTimes.delete(key);
+      // Save any pending talk/webcam time before clearing (user still active when meeting ends)
+      const now = Date.now();
+      for (const [key, startMs] of talkStartTimes.entries()) {
+        if (key.startsWith(`${normalized.meetingId}:`)) {
+          const userId = key.slice(normalized.meetingId.length + 1);
+          await meetingsDb.addParticipantTalkTime(normalized.meetingId, userId, now - startMs);
+          talkStartTimes.delete(key);
+        }
       }
-      for (const key of webcamStartTimes.keys()) {
-        if (key.startsWith(`${normalized.meetingId}:`)) webcamStartTimes.delete(key);
+      for (const [key, startMs] of webcamStartTimes.entries()) {
+        if (key.startsWith(`${normalized.meetingId}:`)) {
+          const userId = key.slice(normalized.meetingId.length + 1);
+          await meetingsDb.addParticipantWebcamTime(normalized.meetingId, userId, now - startMs);
+          webcamStartTimes.delete(key);
+        }
       }
     }
   }
