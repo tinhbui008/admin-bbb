@@ -262,7 +262,9 @@ async function buildParticipantActivity(events, teacherIds = [], studentNameMap 
       // Accumulate times from database
       existing.durationMs += p.durationMs || 0;
       existing.talkTimeMs += p.talkTimeMs || 0;
+      existing._dbTalkTimeMs += p.talkTimeMs || 0;
       existing.webcamTimeMs += p.webcamTimeMs || 0;
+      existing._dbWebcamTimeMs += p.webcamTimeMs || 0;
       existing.messages += p.messages || 0;
       existing.reactions += p.reactions || 0;
       existing.pollVotes += p.pollVotes || 0;
@@ -278,8 +280,10 @@ async function buildParticipantActivity(events, teacherIds = [], studentNameMap 
         durationMs: p.durationMs || 0,
         activeJoinAt: null,
         talkTimeMs: p.talkTimeMs || 0,
+        _dbTalkTimeMs: p.talkTimeMs || 0,
         activeTalkAt: null,
         webcamTimeMs: p.webcamTimeMs || 0,
+        _dbWebcamTimeMs: p.webcamTimeMs || 0,
         activeWebcamAt: null,
         messages: p.messages || 0,
         reactions: p.reactions || 0,
@@ -319,8 +323,10 @@ async function buildParticipantActivity(events, teacherIds = [], studentNameMap 
       durationMs: 0,
       activeJoinAt: null,
       talkTimeMs: 0,
+      _dbTalkTimeMs: 0,
       activeTalkAt: null,
       webcamTimeMs: 0,
+      _dbWebcamTimeMs: 0,
       activeWebcamAt: null,
       messages: 0,
       reactions: 0,
@@ -372,13 +378,16 @@ async function buildParticipantActivity(events, teacherIds = [], studentNameMap 
       }
     }
 
-    // Only count activity from events if NOT pre-populated from DB (to avoid double-counting)
+    // Only count messages/reactions/poll/hand from events if NOT pre-populated from DB
     if (!participant._hasDbData) {
       if (isMessageEvent(event.eventName)) participant.messages += 1;
       if (isReactionEvent(event.eventName)) participant.reactions += 1;
       if (isPollVoteEvent(event.eventName)) participant.pollVotes += 1;
       if (isRaiseHandEvent(event.eventName)) participant.raiseHands += 1;
+    }
 
+    // For talk: use events if DB has no data (0) — handles historical meetings before tracking was added
+    if (participant._dbTalkTimeMs === 0) {
       if (isTalkStartEvent(event.eventName) && timestampMs) {
         participant.talkEvents += 1;
         if (!participant.activeTalkAt) participant.activeTalkAt = timestampMs;
@@ -391,7 +400,10 @@ async function buildParticipantActivity(events, teacherIds = [], studentNameMap 
           participant.activeTalkAt = null;
         }
       }
+    }
 
+    // For webcam: use events if DB has no data (0)
+    if (participant._dbWebcamTimeMs === 0) {
       if (isWebcamStartEvent(event.eventName) && timestampMs) {
         participant.webcamEvents += 1;
         if (!participant.activeWebcamAt) participant.activeWebcamAt = timestampMs;
