@@ -189,7 +189,7 @@ async function handleWebhook(req, res) {
 
 async function handleReset(res) {
   try {
-    await db.query("TRUNCATE events, meetings, classes, teachers, students, class_teachers, class_students, meeting_participants, live_rooms RESTART IDENTITY CASCADE");
+    await db.query("TRUNCATE events, meetings, classes, teachers, students, class_teachers, class_students, meeting_participants, live_rooms, recordings RESTART IDENTITY CASCADE");
     await db.query("UPDATE stats SET value = 0, updated_at = NOW()");
     await db.query("UPDATE webhook_status SET last_webhook_received_at = NULL, last_webhook_preview = NULL, last_error = NULL, updated_at = NOW() WHERE id = 1");
 

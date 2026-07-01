@@ -5,6 +5,7 @@ const { URL } = require("url");
 const CONFIG = require("../config");
 const webhookStatusDb = require("../db/queries/webhookStatus");
 const liveRoomsDb = require("../db/queries/liveRooms");
+const recordingsDb = require("../db/queries/recordings");
 
 function buildChecksum(algorithm, value) {
   return crypto.createHash(algorithm).update(value).digest("hex");
@@ -63,6 +64,69 @@ function parseMeetings(xml) {
   }
 
   return meetings;
+}
+
+function stripCdata(value) {
+  if (typeof value !== "string") return value;
+  return value.replace("<![CDATA[", "").replace("]]>", "").trim();
+}
+
+function parsePlaybackFormats(recordingXml) {
+  const formats = [];
+  const formatMatches = recordingXml.match(/<format>([\s\S]*?)<\/format>/gi) || [];
+
+  for (const formatXml of formatMatches) {
+    const url = parseXmlTag(formatXml, "url");
+    if (!url) continue;
+    const lengthRaw = parseXmlTag(formatXml, "length");
+    formats.push({
+      type: parseXmlTag(formatXml, "type"),
+      url: stripCdata(url),
+      length: lengthRaw !== null ? Number(lengthRaw) : null // minutes
+    });
+  }
+
+  return formats;
+}
+
+function parseRecordings(xml) {
+  const recordings = [];
+  const recordingMatches = xml.match(/<recording>([\s\S]*?)<\/recording>/gi) || [];
+
+  for (const recXml of recordingMatches) {
+    const startTime = Number(parseXmlTag(recXml, "startTime") || 0) || null;
+    const endTime = Number(parseXmlTag(recXml, "endTime") || 0) || null;
+    const playback = parsePlaybackFormats(recXml);
+
+    let durationMs = startTime && endTime && endTime > startTime ? endTime - startTime : null;
+    if (!durationMs && playback.length) {
+      const maxLength = Math.max(...playback.map(f => f.length || 0));
+      durationMs = maxLength > 0 ? maxLength * 60 * 1000 : null;
+    }
+
+    const publishedRaw = parseXmlTag(recXml, "published");
+
+    recordings.push({
+      recordId: parseXmlTag(recXml, "recordID"),
+      meetingId: parseXmlTag(recXml, "meetingID"),
+      name: stripCdata(parseXmlTag(recXml, "name") || "")?.replace(/&apos;/g, "'") || null,
+      state: parseXmlTag(recXml, "state"),
+      published: publishedRaw ? /^true$/i.test(publishedRaw) : null,
+      startTime,
+      endTime,
+      durationMs,
+      participants: Number(parseXmlTag(recXml, "participants") || 0) || null,
+      // getRecordings nests metadata keys without the meta_ prefix; try both forms
+      metadataClassId:
+        parseXmlTag(recXml, "classid") ||
+        parseXmlTag(recXml, "classId") ||
+        parseXmlTag(recXml, "meta_classid") ||
+        null,
+      playback
+    });
+  }
+
+  return recordings;
 }
 
 async function callBbbApi(callName, extraParams = {}) {
@@ -176,6 +240,16 @@ async function listLiveMeetings() {
   };
 }
 
+async function getRecordings(extraParams = {}) {
+  const result = await callBbbApi("getRecordings", extraParams);
+  return {
+    ok: result.returnCode === "SUCCESS",
+    recordings: parseRecordings(result.xml),
+    messageKey: result.messageKey,
+    message: result.message
+  };
+}
+
 async function destroyHook(hookID) {
   if (!hookID) {
     throw new Error("hookID is required");
@@ -223,6 +297,28 @@ async function syncDashboardState() {
     }
 
     await liveRoomsDb.syncLiveRooms(liveRooms);
+
+    // Sync recordings (best-effort — a recordings failure must not break hook/live sync)
+    try {
+      const recordingResult = await getRecordings();
+      const recordings = [];
+      for (const rec of recordingResult.recordings) {
+        if (!rec.recordId) continue;
+
+        let classId = rec.metadataClassId;
+        if (!classId && rec.meetingId) {
+          const ctx = await liveRoomsDb.findMeetingContext(rec.meetingId);
+          classId = ctx.classId;
+        }
+
+        // Only keep recordings we can attribute to a known class
+        if (!classId) continue;
+        recordings.push({ ...rec, classId });
+      }
+      await recordingsDb.syncRecordings(recordings);
+    } catch (recordingError) {
+      console.error("Recording sync failed:", recordingError.message);
+    }
 
     await webhookStatusDb.updateWebhookStatus({
       callbackUrl,
@@ -306,6 +402,7 @@ module.exports = {
   registerGlobalHook,
   listHooks,
   listLiveMeetings,
+  getRecordings,
   destroyHook,
   syncDashboardState,
   verifyBbbChecksum

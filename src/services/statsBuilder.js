@@ -127,6 +127,7 @@ async function buildClassDetails() {
       meetings: classDetail.meetings,
       teachers: classDetail.teachers,
       students: classDetail.students,
+      recordings: classDetail.recordings,
       totals: classDetail.totals,
       participantActivity,
       recentEvents: relatedEvents.slice(0, 12)

@@ -1,4 +1,5 @@
 const db = require("../index");
+const recordingsDb = require("./recordings");
 
 async function upsertClass(classId, className = null) {
   if (!classId || classId === "unmapped") return null;
@@ -149,6 +150,8 @@ async function getClassDetails(classId) {
     [classId]
   );
 
+  const recordings = await recordingsDb.getRecordingsByClassId(classId);
+
   return {
     classId: cls.class_id,
     className: cls.class_name || cls.class_id,
@@ -174,6 +177,7 @@ async function getClassDetails(classId) {
       startedAt: m.started_at,
       endedAt: m.ended_at
     })),
+    recordings,
     totals: {
       teachers: teachersResult.rows.length,
       students: studentsResult.rows.length,
@@ -230,6 +234,7 @@ async function deleteClass(classId) {
   await db.query(`DELETE FROM class_students WHERE class_id = $1`, [classId]);
   await db.query(`DELETE FROM class_teachers WHERE class_id = $1`, [classId]);
   await db.query(`DELETE FROM live_rooms WHERE class_id = $1`, [classId]);
+  await db.query(`DELETE FROM recordings WHERE class_id = $1`, [classId]);
   await db.query(`DELETE FROM classes WHERE class_id = $1`, [classId]);
 }
 

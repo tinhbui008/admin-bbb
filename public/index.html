@@ -889,6 +889,42 @@ function renderStudentsTable(data) {
 // ============================================================
 //  DETAIL PANELS
 // ============================================================
+function fmtDurMs(ms) {
+  if (!ms || ms <= 0) return "-";
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = n => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
+function recordingsSection(recs) {
+  if (!recs || !recs.length) {
+    return `<div class="nh-list-hdr" style="margin-top:16px;">Recordings</div>
+      <div class="nh-list-item"><span class="nh-muted">No recordings</span></div>`;
+  }
+  return `<div class="nh-list-hdr" style="margin-top:16px;">Recordings <span class="nh-muted">(${recs.length})</span></div>
+    ${recs.map(r => {
+      const ready = r.state ? /^published$/i.test(r.state) : !!r.published;
+      const formats = Array.isArray(r.playback) ? r.playback : [];
+      const primary = formats.find(f => f.type === "presentation") || formats[0] || null;
+      const statusBadge = ready
+        ? `<span class="nh-detail-pill" style="background:var(--emeraldSoft);color:var(--emerald);">published</span>`
+        : `<span class="nh-detail-pill" style="background:var(--amberSoft);color:var(--amber);">${r.state || "processing"}</span>`;
+      const link = (ready && primary)
+        ? `<a class="nh-btn-ghost" href="${primary.url}" target="_blank" rel="noopener" style="height:28px;padding:0 12px;font-size:11.5px;color:var(--brand);border-color:var(--brand);text-decoration:none;display:inline-flex;align-items:center;">Xem</a>`
+        : `<span class="nh-muted" style="font-size:11.5px;">Đang xử lý</span>`;
+      return `<div class="nh-list-item" style="justify-content:space-between;">
+        <div style="min-width:0;">
+          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;">${r.name || r.meetingId || "Recording"}</div>
+          <div style="font-size:11px;color:var(--text3);">${fmtDT(r.startTime)} · ${fmtDurMs(r.durationMs)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">${statusBadge}${link}</div>
+      </div>`;
+    }).join("")}`;
+}
+
 function activityTable(rows) {
   if (!rows||!rows.length) return "";
   return `<div style="margin-top:14px;"><div class="nh-list-hdr">Room Activity</div><div style="overflow-x:auto;"><div class="nh-tbl-wrap"><table class="nh-tbl">
@@ -935,6 +971,7 @@ function renderClassDetail(data) {
       <span class="nh-avatar" style="background:var(--emeraldSoft);color:var(--emerald);">${initials(st.userName||st.userId)}</span>
       <div><div style="font-size:13px;font-weight:600;">${st.userName||st.userId}</div><div style="font-size:11px;color:var(--text3);">${st.joinCount} joins · ${st.leaveCount} leaves</div></div>
     </div>`).join("") || `<div class="nh-list-item"><span class="nh-muted">No students</span></div>`}
+    ${recordingsSection(s.recordings||[])}
     ${activityTable(s.participantActivity||[])}
   </div>`;
 }
