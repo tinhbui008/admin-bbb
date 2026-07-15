@@ -44,7 +44,8 @@ const CONFIG = {
   autoRegisterHook: /^true$/i.test(process.env.BBB_AUTO_REGISTER_HOOK || ""),
   getRaw: /^true$/i.test(process.env.BBB_GET_RAW || ""),
   eventIds: process.env.BBB_EVENT_IDS || "",
-  useBearerAuth: /^true$/i.test(process.env.BBB_USE_BEARER_AUTH || "")
+  useBearerAuth: /^true$/i.test(process.env.BBB_USE_BEARER_AUTH || ""),
+  greenlightDatabaseUrl: process.env.GREENLIGHT_DATABASE_URL || ""
 };
 
 module.exports = CONFIG;

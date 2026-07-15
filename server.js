@@ -18,6 +18,7 @@ const {
   verifyBbbChecksum
 } = require("./src/services/bbbApi");
 const { handleHistoryRoutes } = require("./src/routes/history");
+const greenlightDb = require("./src/db/greenlight");
 const statsDb = require("./src/db/queries/stats");
 const webhookStatusDb = require("./src/db/queries/webhookStatus");
 
@@ -284,7 +285,18 @@ async function handleClassDetail(classId, res) {
       relatedEvents, teacherIds, studentNameMap, teacherNameMap, participantsData
     );
 
-    sendJson(res, 200, { ok: true, ...classDetail, participantActivity });
+    // Best-effort: access code state/history from Greenlight DB. A failure here
+    // (unconfigured / Greenlight DB unreachable) must not break the class detail.
+    let accessCodeInfo = null;
+    try {
+      const meetingIds = (classDetail.meetings || []).map(m => m.meetingId).filter(Boolean);
+      meetingIds.push(classId);
+      accessCodeInfo = await greenlightDb.getAccessCodeInfo(meetingIds);
+    } catch (accessCodeError) {
+      console.error("Access code info failed:", accessCodeError.message);
+    }
+
+    sendJson(res, 200, { ok: true, ...classDetail, participantActivity, accessCodeInfo });
   } catch (error) {
     sendJson(res, 500, { ok: false, error: error.message });
   }

@@ -940,6 +940,69 @@ function activityTable(rows) {
   </table></div></div></div>`;
 }
 
+// Access code state/history is fetched lazily per class (from /api/classes/:id/detail)
+// so it never weighs down the frequent SSE stats pushes. Cached per class for the session.
+const accessCodeCache = {};
+const accessCodeLoading = {};
+
+function acCode(v) {
+  return v ? `<span class="nh-mono">${v}</span>` : `<span class="nh-muted">chưa đặt</span>`;
+}
+
+function accessCodeSection(info) {
+  const hdr = `<div class="nh-list-hdr" style="margin-top:16px;">Access Codes</div>`;
+  if (info === undefined) return `${hdr}<div class="nh-list-item"><span class="nh-muted">Đang tải…</span></div>`;
+  if (!info || !info.rooms || !info.rooms.length) {
+    return `${hdr}<div class="nh-list-item"><span class="nh-muted">Chưa liên kết được room Greenlight cho class này.</span></div>`;
+  }
+  return hdr + info.rooms.map(r => {
+    const cur = r.current || {};
+    const mod = cur.moderator || {}, vie = cur.viewer || {};
+    const currentTbl = `<div class="nh-tbl-wrap"><table class="nh-tbl">
+      <thead><tr><th>Loại mã</th><th>Hiện tại</th><th>Cập nhật</th></tr></thead>
+      <tbody>
+        <tr><td>Moderator</td><td>${acCode(mod.value)}</td><td class="nh-muted nh-mono">${mod.updatedAt?fmtDTen(mod.updatedAt):"-"}</td></tr>
+        <tr><td>Viewer</td><td>${acCode(vie.value)}</td><td class="nh-muted nh-mono">${vie.updatedAt?fmtDTen(vie.updatedAt):"-"}</td></tr>
+      </tbody></table></div>`;
+    const rows = (r.history || []).map(h => {
+      const change = h.op === "DELETE"
+        ? `${acCode(h.oldValue)} → <span class="nh-muted">xóa</span>`
+        : `${h.oldValue ? acCode(h.oldValue) : '<span class="nh-muted">trống</span>'} → ${acCode(h.newValue)}`;
+      return `<tr><td class="nh-muted nh-mono">${fmtDTen(h.changedAt)}</td><td>${h.code==="moderator"?"Moderator":"Viewer"}</td><td>${change}</td></tr>`;
+    }).join("");
+    const logTbl = rows
+      ? `<div style="overflow-x:auto;"><div class="nh-tbl-wrap"><table class="nh-tbl">
+          <thead><tr><th>Thời gian</th><th>Loại mã</th><th>Thay đổi</th></tr></thead>
+          <tbody>${rows}</tbody></table></div></div>`
+      : `<div class="nh-list-item"><span class="nh-muted">Chưa có thay đổi nào được ghi nhận.</span></div>`;
+    const roomLbl = info.rooms.length > 1 ? `<div class="nh-detail-sub" style="margin:6px 0;">Room: ${r.roomName||r.meetingId}</div>` : "";
+    return `${roomLbl}${currentTbl}<div class="nh-list-hdr" style="margin-top:12px;">Change Log</div>${logTbl}`;
+  }).join("");
+}
+
+function injectAccessCodes(classId) {
+  if (state.selectedClassId !== classId) return;
+  const slot = document.getElementById("accessCodeSlot");
+  if (slot) slot.innerHTML = accessCodeSection(accessCodeCache[classId]);
+}
+
+async function loadAccessCodes(classId) {
+  if (!classId) return;
+  if (accessCodeCache[classId] !== undefined) { injectAccessCodes(classId); return; }
+  if (accessCodeLoading[classId]) return;
+  accessCodeLoading[classId] = true;
+  try {
+    const res = await fetch(`/api/classes/${encodeURIComponent(classId)}/detail`);
+    const js = await res.json();
+    accessCodeCache[classId] = js.accessCodeInfo || { rooms: [] };
+  } catch (e) {
+    accessCodeCache[classId] = { rooms: [] };
+  } finally {
+    accessCodeLoading[classId] = false;
+    injectAccessCodes(classId);
+  }
+}
+
 function renderClassDetail(data) {
   const s = data.classDetails.find(x => x.classId===state.selectedClassId) || data.classDetails[0];
   if (!s) return emptyDetail("No class data available.");
@@ -973,6 +1036,7 @@ function renderClassDetail(data) {
     </div>`).join("") || `<div class="nh-list-item"><span class="nh-muted">No students</span></div>`}
     ${recordingsSection(s.recordings||[])}
     ${activityTable(s.participantActivity||[])}
+    <div id="accessCodeSlot">${accessCodeSection(accessCodeCache[s.classId])}</div>
   </div>`;
 }
 
@@ -1185,7 +1249,7 @@ function renderCurrentView() {
   document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===state.activeTab));
 
   const tc=document.getElementById("tabContent"),dp=document.getElementById("detailPanel");
-  if(state.activeTab==="classes"){tc.innerHTML=renderClassesTable(data);dp.innerHTML=renderClassDetail(data);bindClassFilterInteractions();}
+  if(state.activeTab==="classes"){tc.innerHTML=renderClassesTable(data);dp.innerHTML=renderClassDetail(data);bindClassFilterInteractions();loadAccessCodes(state.selectedClassId);}
   else if(state.activeTab==="teachers"){tc.innerHTML=renderTeachersTable(data);dp.innerHTML=renderTeacherDetail(data);}
   else if(state.activeTab==="history"){tc.innerHTML=renderHistorySearchForm();dp.innerHTML="";bindHistoryInteractions();}
   else{tc.innerHTML=renderStudentsTable(data);dp.innerHTML=renderStudentDetail(data);}

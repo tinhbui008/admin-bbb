@@ -9,6 +9,9 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql://postgres:14a3b3aeb9800c969c8723292e9f3a3ddbd37c59032303c3@postgres:5432/bbb_admin
+      # Read-only Greenlight DB for the access-code panel (blank = disabled).
+      # Set the value in .env; host must resolve to the Greenlight postgres.
+      GREENLIGHT_DATABASE_URL: ${GREENLIGHT_DATABASE_URL:-}
     depends_on: []
     extra_hosts:
       - "class.nihaoma-mandarin.com:host-gateway"
