@@ -946,35 +946,35 @@ const accessCodeCache = {};
 const accessCodeLoading = {};
 
 function acCode(v) {
-  return v ? `<span class="nh-mono">${v}</span>` : `<span class="nh-muted">chưa đặt</span>`;
+  return v ? `<span class="nh-mono">${v}</span>` : `<span class="nh-muted">not set</span>`;
 }
 
 function accessCodeSection(info) {
   const hdr = `<div class="nh-list-hdr" style="margin-top:16px;">Access Codes</div>`;
-  if (info === undefined) return `${hdr}<div class="nh-list-item"><span class="nh-muted">Đang tải…</span></div>`;
+  if (info === undefined) return `${hdr}<div class="nh-list-item"><span class="nh-muted">Loading…</span></div>`;
   if (!info || !info.rooms || !info.rooms.length) {
-    return `${hdr}<div class="nh-list-item"><span class="nh-muted">Chưa liên kết được room Greenlight cho class này.</span></div>`;
+    return `${hdr}<div class="nh-list-item"><span class="nh-muted">No linked Greenlight room for this class.</span></div>`;
   }
   return hdr + info.rooms.map(r => {
     const cur = r.current || {};
     const mod = cur.moderator || {}, vie = cur.viewer || {};
     const currentTbl = `<div class="nh-tbl-wrap"><table class="nh-tbl">
-      <thead><tr><th>Loại mã</th><th>Hiện tại</th><th>Cập nhật</th></tr></thead>
+      <thead><tr><th>Type</th><th>Current</th><th>Updated</th></tr></thead>
       <tbody>
         <tr><td>Moderator</td><td>${acCode(mod.value)}</td><td class="nh-muted nh-mono">${mod.updatedAt?fmtDTen(mod.updatedAt):"-"}</td></tr>
         <tr><td>Viewer</td><td>${acCode(vie.value)}</td><td class="nh-muted nh-mono">${vie.updatedAt?fmtDTen(vie.updatedAt):"-"}</td></tr>
       </tbody></table></div>`;
     const rows = (r.history || []).map(h => {
       const change = h.op === "DELETE"
-        ? `${acCode(h.oldValue)} → <span class="nh-muted">xóa</span>`
-        : `${h.oldValue ? acCode(h.oldValue) : '<span class="nh-muted">trống</span>'} → ${acCode(h.newValue)}`;
+        ? `${acCode(h.oldValue)} → <span class="nh-muted">removed</span>`
+        : `${h.oldValue ? acCode(h.oldValue) : '<span class="nh-muted">empty</span>'} → ${acCode(h.newValue)}`;
       return `<tr><td class="nh-muted nh-mono">${fmtDTen(h.changedAt)}</td><td>${h.code==="moderator"?"Moderator":"Viewer"}</td><td>${change}</td></tr>`;
     }).join("");
     const logTbl = rows
       ? `<div style="overflow-x:auto;"><div class="nh-tbl-wrap"><table class="nh-tbl">
-          <thead><tr><th>Thời gian</th><th>Loại mã</th><th>Thay đổi</th></tr></thead>
+          <thead><tr><th>Time</th><th>Type</th><th>Change</th></tr></thead>
           <tbody>${rows}</tbody></table></div></div>`
-      : `<div class="nh-list-item"><span class="nh-muted">Chưa có thay đổi nào được ghi nhận.</span></div>`;
+      : `<div class="nh-list-item"><span class="nh-muted">No changes recorded yet.</span></div>`;
     const roomLbl = info.rooms.length > 1 ? `<div class="nh-detail-sub" style="margin:6px 0;">Room: ${r.roomName||r.meetingId}</div>` : "";
     return `${roomLbl}${currentTbl}<div class="nh-list-hdr" style="margin-top:12px;">Change Log</div>${logTbl}`;
   }).join("");
