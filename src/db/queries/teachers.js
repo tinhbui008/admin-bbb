@@ -53,11 +53,12 @@ async function searchTeachers({ search, classId, from, to, page = 1, limit = 20 
     conditions.push(`EXISTS (SELECT 1 FROM class_teachers ct WHERE ct.teacher_id = t.teacher_id AND ct.class_id = $${paramIndex++})`);
     params.push(classId);
   }
+  // Activity date via events.created_at (meetings.started_at is first-created only, never updates).
   if (from || to) {
     const rangeConds = [];
-    if (from) { rangeConds.push(`m.started_at >= $${paramIndex++}::date`); params.push(from); }
-    if (to)   { rangeConds.push(`m.started_at < ($${paramIndex++}::date + 1)`); params.push(to); }
-    conditions.push(`EXISTS (SELECT 1 FROM class_teachers ct JOIN meetings m ON m.class_id = ct.class_id WHERE ct.teacher_id = t.teacher_id AND ${rangeConds.join(" AND ")})`);
+    if (from) { rangeConds.push(`e.created_at >= $${paramIndex++}::date`); params.push(from); }
+    if (to)   { rangeConds.push(`e.created_at < ($${paramIndex++}::date + 1)`); params.push(to); }
+    conditions.push(`EXISTS (SELECT 1 FROM class_teachers ct JOIN events e ON e.class_id = ct.class_id WHERE ct.teacher_id = t.teacher_id AND ${rangeConds.join(" AND ")})`);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";

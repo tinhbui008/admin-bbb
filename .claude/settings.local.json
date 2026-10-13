@@ -35,7 +35,8 @@
       "Bash(ls docs *)",
       "Bash(ls *.md)",
       "Bash(echo \"curl -sI https://liveclass.meego.study/plugins/chat-emoji/ChatEmojiPlugin.js | grep -i 'cache\\\\\\\\|expires\\\\\\\\|etag\\\\\\\\|last-mod'\")",
-      "Bash(echo \"grep -rn 'expires\\\\\\\\|Cache-Control\\\\\\\\|/assets\\\\\\\\|plugins' /etc/bigbluebutton/nginx/ /etc/nginx/ 2>/dev/null | grep -vi '#'\")"
+      "Bash(echo \"grep -rn 'expires\\\\\\\\|Cache-Control\\\\\\\\|/assets\\\\\\\\|plugins' /etc/bigbluebutton/nginx/ /etc/nginx/ 2>/dev/null | grep -vi '#'\")",
+      "Bash(node --check src/db/queries/classes.js)"
     ]
   }
 }

@@ -457,9 +457,14 @@ const historyState = {
 };
 
 const classFilterState = {
-  search: "", dateFrom: getYesterdayDate(), dateTo: getTodayDate(),
+  search: "", dateFrom: "", dateTo: "",
   page: 1, results: null, loading: false
 };
+
+// Paginated browse (Prev/Next only) for the Teachers and Students tabs,
+// backed by the paginated /api/history/{teachers,students} endpoints.
+const teacherListState = { page: 1, results: null, loading: false };
+const studentListState = { page: 1, results: null, loading: false };
 
 // ============================================================
 //  THEME
@@ -735,6 +740,44 @@ async function performClassesFilter() {
   renderCurrentView();
 }
 
+function histPgn(p, btnClass) {
+  if (!p || p.totalPages <= 1) return "";
+  return `<div class="nh-pgn" style="margin-top:11px;">
+    <span>Page ${p.page} / ${p.totalPages} · ${p.total} total</span>
+    <div style="display:flex;gap:6px;">
+      <button class="nh-pgn-btn ${btnClass}" data-page="${p.page-1}" ${p.page<=1?"disabled":""}>Prev</button>
+      <button class="nh-pgn-btn ${btnClass}" data-page="${p.page+1}" ${p.page>=p.totalPages?"disabled":""}>Next</button>
+    </div></div>`;
+}
+
+async function loadTeacherList() {
+  teacherListState.loading = true;
+  renderCurrentView();
+  try {
+    const res = await fetch(`/api/history/teachers?page=${teacherListState.page}&limit=20`);
+    const js  = await res.json();
+    teacherListState.results = js.ok ? js : { data:[], pagination:{page:1,limit:20,total:0,totalPages:0} };
+  } catch(e) {
+    teacherListState.results = { data:[], pagination:{page:1,limit:20,total:0,totalPages:0} };
+  }
+  teacherListState.loading = false;
+  renderCurrentView();
+}
+
+async function loadStudentList() {
+  studentListState.loading = true;
+  renderCurrentView();
+  try {
+    const res = await fetch(`/api/history/students?page=${studentListState.page}&limit=20`);
+    const js  = await res.json();
+    studentListState.results = js.ok ? js : { data:[], pagination:{page:1,limit:20,total:0,totalPages:0} };
+  } catch(e) {
+    studentListState.results = { data:[], pagination:{page:1,limit:20,total:0,totalPages:0} };
+  }
+  studentListState.loading = false;
+  renderCurrentView();
+}
+
 async function exportClassDetailExcel(classId, className) {
   console.log("[Export] classId:", classId, "className:", className);
   let s = (state.stats?.classDetails || []).find(x => x.classId === classId);
@@ -871,19 +914,23 @@ function bindClassFilterInteractions() {
 }
 
 function renderTeachersTable(data) {
-  const rows = (data.topTeachers||[]).map(it => `<tr>
-    <td><button class="nh-tlink" data-teacher-id="${it.teacherId}">${it.teacherId||"-"}</button></td>
-    <td>${it.classes||0}</td><td>${it.students||0}</td><td>${it.joinEvents||0}</td><td>${it.leaveEvents||0}</td>
+  const res = teacherListState.results;
+  if (!res) return `<div class="nh-tbl-wrap" style="padding:20px;color:var(--text3);">Loading…</div>`;
+  const rows = res.data.map(it => `<tr>
+    <td><button class="nh-tlink" data-teacher-id="${it.teacherId}">${it.teacherName||it.teacherId||"-"}</button></td>
+    <td>${it.classCount||0}</td><td>${it.studentCount||0}</td><td>${it.joinEvents||0}</td><td>${it.leaveEvents||0}</td>
   </tr>`).join("") || `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3);">No data</td></tr>`;
-  return `<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Teacher</th><th>Classes</th><th>Students</th><th>Joins</th><th>Leaves</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Teacher</th><th>Classes</th><th>Students</th><th>Joins</th><th>Leaves</th></tr></thead><tbody>${rows}</tbody></table></div>` + histPgn(res.pagination, "teacher-page-btn");
 }
 
 function renderStudentsTable(data) {
-  const rows = (data.topStudents||[]).map(it => `<tr>
+  const res = studentListState.results;
+  if (!res) return `<div class="nh-tbl-wrap" style="padding:20px;color:var(--text3);">Loading…</div>`;
+  const rows = res.data.map(it => `<tr>
     <td><button class="nh-tlink" data-student-id="${it.userId}">${it.userName||it.userId||"-"}</button></td>
-    <td>${it.classes||0}</td><td>${it.teachers||0}</td><td>${it.joins||0}</td><td>${it.leaves||0}</td>
-  </tr>`).join("") || `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text3);">No data</td></tr>`;
-  return `<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Student</th><th>Classes</th><th>Teachers</th><th>Joins</th><th>Leaves</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <td>${it.classCount||0}</td><td>${it.totalJoins||0}</td><td>${it.totalLeaves||0}</td>
+  </tr>`).join("") || `<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text3);">No data</td></tr>`;
+  return `<div class="nh-tbl-wrap"><table class="nh-tbl"><thead><tr><th>Student</th><th>Classes</th><th>Joins</th><th>Leaves</th></tr></thead><tbody>${rows}</tbody></table></div>` + histPgn(res.pagination, "student-page-btn");
 }
 
 // ============================================================
@@ -1271,6 +1318,8 @@ function bindInteractions() {
   document.querySelectorAll("[data-class-id]").forEach(b=>{b.onclick=()=>{state.selectedClassId=b.dataset.classId;renderCurrentView();};});
   document.querySelectorAll("[data-teacher-id]").forEach(b=>{b.onclick=()=>{state.selectedTeacherId=b.dataset.teacherId;renderCurrentView();};});
   document.querySelectorAll("[data-student-id]").forEach(b=>{b.onclick=()=>{state.selectedStudentId=b.dataset.studentId;renderCurrentView();};});
+  document.querySelectorAll(".teacher-page-btn").forEach(b=>{b.onclick=()=>{const p=parseInt(b.dataset.page,10);if(p>=1){teacherListState.page=p;loadTeacherList();}};});
+  document.querySelectorAll(".student-page-btn").forEach(b=>{b.onclick=()=>{const p=parseInt(b.dataset.page,10);if(p>=1){studentListState.page=p;loadStudentList();}};});
 }
 
 // ============================================================
@@ -1322,9 +1371,9 @@ function renderCurrentView() {
 
   const tc=document.getElementById("tabContent"),dp=document.getElementById("detailPanel");
   if(state.activeTab==="classes"){tc.innerHTML=renderClassesTable(data);dp.innerHTML=renderClassDetail(data);bindClassFilterInteractions();loadAccessCodes(state.selectedClassId);ensureHistDetail("class",state.selectedClassId);}
-  else if(state.activeTab==="teachers"){tc.innerHTML=renderTeachersTable(data);dp.innerHTML=renderTeacherDetail(data);ensureHistDetail("teacher",state.selectedTeacherId);}
+  else if(state.activeTab==="teachers"){tc.innerHTML=renderTeachersTable(data);dp.innerHTML=renderTeacherDetail(data);ensureHistDetail("teacher",state.selectedTeacherId);if(!teacherListState.results&&!teacherListState.loading)loadTeacherList();}
   else if(state.activeTab==="history"){tc.innerHTML=renderHistorySearchForm();dp.innerHTML="";bindHistoryInteractions();}
-  else{tc.innerHTML=renderStudentsTable(data);dp.innerHTML=renderStudentDetail(data);ensureHistDetail("student",state.selectedStudentId);}
+  else{tc.innerHTML=renderStudentsTable(data);dp.innerHTML=renderStudentDetail(data);ensureHistDetail("student",state.selectedStudentId);if(!studentListState.results&&!studentListState.loading)loadStudentList();}
 
   bindInteractions();
 }

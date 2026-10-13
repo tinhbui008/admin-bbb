@@ -46,16 +46,24 @@ in the date range. A class that met on 2026-10-10 but also later has
 (`meetings`/`events` searches already filter correctly by their own timestamps.)
 
 **Change.** Replace the entity-date conditions with an `EXISTS` over
-`meetings.started_at` within `[from, to]`.
+`events.created_at` within `[from, to]`.
+
+> **Correction (found during implementation):** `meetings.started_at` cannot be
+> used as the activity signal — `upsertMeeting`/`incrementMeetingCreated` set it
+> only on first creation and never update it (rooms are persistent, one row per
+> room), so it reflects when a class was *first created*, not recent activity.
+> Filtering by it returned empty for recent ranges (e.g. 2026-10-12→13). The
+> reliable per-activity signal is `events.created_at` (+ `events.class_id`), used
+> below. This is a symptom of the deferred #3b (meetings collapse per room).
 
 - `src/db/queries/classes.js` `searchClasses`: remove the `c.updated_at >= $::date`
   / `c.updated_at < ($::date + interval '1 day')` conditions; add
-  `EXISTS (SELECT 1 FROM meetings m WHERE m.class_id = c.class_id AND m.started_at >= $from::date AND m.started_at < $to::date + 1)`.
+  `EXISTS (SELECT 1 FROM events e WHERE e.class_id = c.class_id AND e.created_at >= $from::date AND e.created_at < $to::date + 1)`.
   Keep the existing lifetime "activity filter" (`SUM(join_events) > 0`).
 - `src/db/queries/teachers.js` `searchTeachers`: replace `t.created_at` conditions
-  with `EXISTS (SELECT 1 FROM class_teachers ct JOIN meetings m ON m.class_id = ct.class_id WHERE ct.teacher_id = t.teacher_id AND m.started_at >= $from::date AND m.started_at < $to::date + 1)`.
+  with `EXISTS (SELECT 1 FROM class_teachers ct JOIN events e ON e.class_id = ct.class_id WHERE ct.teacher_id = t.teacher_id AND e.created_at >= $from::date AND e.created_at < $to::date + 1)`.
 - `src/db/queries/students.js` `searchStudents`: replace `s.created_at` conditions
-  with `EXISTS (SELECT 1 FROM class_students cs JOIN meetings m ON m.class_id = cs.class_id WHERE cs.user_id = s.user_id AND m.started_at >= $from::date AND m.started_at < $to::date + 1)`.
+  with `EXISTS (SELECT 1 FROM class_students cs JOIN events e ON e.class_id = cs.class_id WHERE cs.user_id = s.user_id AND e.created_at >= $from::date AND e.created_at < $to::date + 1)`.
 
 `from` and `to` may each be supplied independently; apply whichever is present
 (only lower bound if `to` absent, only upper bound if `from` absent), matching

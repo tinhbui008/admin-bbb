@@ -44,9 +44,10 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
   const params = [];
   let paramIndex = 1;
 
-  // Apply activity filter only when a date range is given (to hide orphans in ranged view)
-  // When searching by name or fetching all (no date, no search): show everything
-  if (!search && (from || to)) {
+  // Default view shows all REAL classes: exclude the synthetic 'unmapped' bucket and
+  // zero-activity orphans whenever not searching by name. A date range narrows further below.
+  if (!search) {
+    conditions.push(`c.class_id <> 'unmapped'`);
     conditions.push(`(
       (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) > 0
       OR (SELECT COUNT(DISTINCT cs.user_id) FROM class_students cs WHERE cs.class_id = c.class_id) > 0
@@ -62,13 +63,14 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
     conditions.push(`EXISTS (SELECT 1 FROM class_teachers ct WHERE ct.class_id = c.class_id AND ct.teacher_id = $${paramIndex++})`);
     params.push(teacherId);
   }
-  // Filter by ACTIVITY date (had a meeting in range), not the class row's updated_at.
-  // Skip when searching by name — user wants the class regardless of date.
+  // Filter by ACTIVITY date (had events in range). NOTE: meetings.started_at is the room's
+  // first-created time and never updates (rooms are persistent), so it cannot be used here;
+  // events.created_at is the reliable per-activity signal. Skip when searching by name.
   if (!search && (from || to)) {
     const rangeConds = [];
-    if (from) { rangeConds.push(`m.started_at >= $${paramIndex++}::date`); params.push(from); }
-    if (to)   { rangeConds.push(`m.started_at < ($${paramIndex++}::date + 1)`); params.push(to); }
-    conditions.push(`EXISTS (SELECT 1 FROM meetings m WHERE m.class_id = c.class_id AND ${rangeConds.join(" AND ")})`);
+    if (from) { rangeConds.push(`e.created_at >= $${paramIndex++}::date`); params.push(from); }
+    if (to)   { rangeConds.push(`e.created_at < ($${paramIndex++}::date + 1)`); params.push(to); }
+    conditions.push(`EXISTS (SELECT 1 FROM events e WHERE e.class_id = c.class_id AND ${rangeConds.join(" AND ")})`);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
