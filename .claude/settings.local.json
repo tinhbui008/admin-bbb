@@ -12,7 +12,30 @@
       "Bash(git commit:*)",
       "Bash(node -c:*)",
       "Bash(node -e:*)",
-      "Bash(dir \"E:\\\\Dev\\\\BBB-Admin-Nihaoma\")"
+      "Bash(dir \"E:\\\\Dev\\\\BBB-Admin-Nihaoma\")",
+      "Bash(git *)",
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "mcp__playwright__browser_navigate",
+      "Bash(node --check server.js)",
+      "Bash(node --check src/config.js)",
+      "Bash(node --check src/db/greenlight.js)",
+      "WebSearch",
+      "WebFetch(domain:docs.bigbluebutton.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(gh api *)",
+      "Bash(command -v gh git node npm)",
+      "Bash(xargs -I{} sh -c 'echo \"## {} ##\"; cat \"{}\"')",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "PowerShell(npm test *)",
+      "PowerShell(npm run *)",
+      "PowerShell(git *)",
+      "PowerShell(npm uninstall *)",
+      "Bash(ls docs *)",
+      "Bash(ls *.md)",
+      "Bash(echo \"curl -sI https://liveclass.meego.study/plugins/chat-emoji/ChatEmojiPlugin.js | grep -i 'cache\\\\\\\\|expires\\\\\\\\|etag\\\\\\\\|last-mod'\")",
+      "Bash(echo \"grep -rn 'expires\\\\\\\\|Cache-Control\\\\\\\\|/assets\\\\\\\\|plugins' /etc/bigbluebutton/nginx/ /etc/nginx/ 2>/dev/null | grep -vi '#'\")"
     ]
   }
 }

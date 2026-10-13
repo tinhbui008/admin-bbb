@@ -1003,8 +1003,68 @@ async function loadAccessCodes(classId) {
   }
 }
 
+// Historical detail: a class/teacher/student clicked from History search may not be in the
+// live /api/stats snapshot (which only carries the recent/active subset). Mirrors the
+// access-code lazy-load: fetch the entity from /api/history/.../:id, adapt it to the
+// renderer shape, cache it, then re-render. Without this the renderers used to fall back
+// to XDetails[0] and silently show an unrelated record.
+const histDetailCache = { class: {}, teacher: {}, student: {} };
+const histDetailLoading = { class: {}, teacher: {}, student: {} };
+const HIST_META = {
+  class:   { arr: "classDetails",   key: "classId",   path: "classes"  },
+  teacher: { arr: "teacherDetails", key: "teacherId", path: "teachers" },
+  student: { arr: "studentDetails", key: "userId",    path: "students" }
+};
+
+function adaptHistDetail(kind, d) {
+  if (kind === "teacher") return { ...d, classNames: (d.classes || []).map(c => c.className) };
+  if (kind === "student") return {
+    ...d,
+    classIds:   (d.classes  || []).map(c => c.classId),
+    teacherIds: (d.teachers || []).map(t => t.teacherId),
+    classNames: (d.classes  || []).map(c => c.className)
+  };
+  return d; // class shape already matches renderClassDetail
+}
+
+async function ensureHistDetail(kind, id) {
+  if (!id) return;
+  const meta = HIST_META[kind];
+  const liveArr = (state.stats && state.stats[meta.arr]) || [];
+  if (liveArr.some(x => x[meta.key] === id)) return;     // present in live stats, no fetch
+  if (histDetailCache[kind][id] !== undefined) return;   // already resolved (data or not-found)
+  if (histDetailLoading[kind][id]) return;
+  histDetailLoading[kind][id] = true;
+  try {
+    const res = await fetch(`/api/history/${meta.path}/${encodeURIComponent(id)}`);
+    const js = await res.json();
+    histDetailCache[kind][id] = (js.ok && js.data) ? adaptHistDetail(kind, js.data) : { __notfound: true };
+  } catch (e) {
+    histDetailCache[kind][id] = { __notfound: true };
+  } finally {
+    histDetailLoading[kind][id] = false;
+    renderCurrentView();
+  }
+}
+
+function resolveDetail(kind, selectedId) {
+  const meta = HIST_META[kind];
+  const liveArr = (state.stats && state.stats[meta.arr]) || [];
+  if (selectedId) {
+    const live = liveArr.find(x => x[meta.key] === selectedId);
+    return live || histDetailCache[kind][selectedId] || { __loading: true };
+  }
+  return liveArr[0] || null;
+}
+
+function detailLoading() {
+  return `<div class="nh-detail nh-empty"><h3>Loading…</h3></div>`;
+}
+
 function renderClassDetail(data) {
-  const s = data.classDetails.find(x => x.classId===state.selectedClassId) || data.classDetails[0];
+  const s = resolveDetail("class", state.selectedClassId);
+  if (s && s.__loading) return detailLoading();
+  if (s && s.__notfound) return emptyDetail("Class not found.");
   if (!s) return emptyDetail("No class data available.");
   state.selectedClassId = s.classId;
   return `<div class="nh-detail">
@@ -1041,7 +1101,9 @@ function renderClassDetail(data) {
 }
 
 function renderTeacherDetail(data) {
-  const s = data.teacherDetails.find(x => x.teacherId===state.selectedTeacherId) || data.teacherDetails[0];
+  const s = resolveDetail("teacher", state.selectedTeacherId);
+  if (s && s.__loading) return detailLoading();
+  if (s && s.__notfound) return emptyDetail("Teacher not found.");
   if (!s) return emptyDetail("No teachers found.");
   state.selectedTeacherId = s.teacherId;
   return `<div class="nh-detail">
@@ -1064,7 +1126,9 @@ function renderTeacherDetail(data) {
 }
 
 function renderStudentDetail(data) {
-  const s = data.studentDetails.find(x => x.userId===state.selectedStudentId) || data.studentDetails[0];
+  const s = resolveDetail("student", state.selectedStudentId);
+  if (s && s.__loading) return detailLoading();
+  if (s && s.__notfound) return emptyDetail("Student not found.");
   if (!s) return emptyDetail("No students found.");
   state.selectedStudentId = s.userId;
   return `<div class="nh-detail">
@@ -1249,10 +1313,10 @@ function renderCurrentView() {
   document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===state.activeTab));
 
   const tc=document.getElementById("tabContent"),dp=document.getElementById("detailPanel");
-  if(state.activeTab==="classes"){tc.innerHTML=renderClassesTable(data);dp.innerHTML=renderClassDetail(data);bindClassFilterInteractions();loadAccessCodes(state.selectedClassId);}
-  else if(state.activeTab==="teachers"){tc.innerHTML=renderTeachersTable(data);dp.innerHTML=renderTeacherDetail(data);}
+  if(state.activeTab==="classes"){tc.innerHTML=renderClassesTable(data);dp.innerHTML=renderClassDetail(data);bindClassFilterInteractions();loadAccessCodes(state.selectedClassId);ensureHistDetail("class",state.selectedClassId);}
+  else if(state.activeTab==="teachers"){tc.innerHTML=renderTeachersTable(data);dp.innerHTML=renderTeacherDetail(data);ensureHistDetail("teacher",state.selectedTeacherId);}
   else if(state.activeTab==="history"){tc.innerHTML=renderHistorySearchForm();dp.innerHTML="";bindHistoryInteractions();}
-  else{tc.innerHTML=renderStudentsTable(data);dp.innerHTML=renderStudentDetail(data);}
+  else{tc.innerHTML=renderStudentsTable(data);dp.innerHTML=renderStudentDetail(data);ensureHistDetail("student",state.selectedStudentId);}
 
   bindInteractions();
 }
