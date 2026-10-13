@@ -466,6 +466,10 @@ const classFilterState = {
 const teacherListState = { page: 1, results: null, loading: false };
 const studentListState = { page: 1, results: null, loading: false };
 
+// Client-side paging for per-class detail lists (Recordings, Room Activity) — their data
+// arrives embedded in the class detail, so they page in memory. Reset when the class changes.
+const detailPaging = { recordings: 1, activity: 1, forClassId: null };
+
 // ============================================================
 //  THEME
 // ============================================================
@@ -951,8 +955,12 @@ function recordingsSection(recs) {
     return `<div class="nh-list-hdr" style="margin-top:16px;">Recordings</div>
       <div class="nh-list-item"><span class="nh-muted">No recordings</span></div>`;
   }
+  const size = 10;
+  const totalPages = Math.ceil(recs.length / size);
+  const page = Math.min(Math.max(detailPaging.recordings, 1), totalPages);
+  const slice = recs.slice((page - 1) * size, page * size);
   return `<div class="nh-list-hdr" style="margin-top:16px;">Recordings <span class="nh-muted">(${recs.length})</span></div>
-    ${recs.map(r => {
+    ${slice.map(r => {
       const ready = r.state ? /^published$/i.test(r.state) : !!r.published;
       const formats = Array.isArray(r.playback) ? r.playback : [];
       const primary = formats.find(f => f.type === "presentation") || formats[0] || null;
@@ -969,14 +977,19 @@ function recordingsSection(recs) {
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">${statusBadge}${link}</div>
       </div>`;
-    }).join("")}`;
+    }).join("")}
+    ${histPgn({ page, totalPages, total: recs.length }, "rec-page-btn")}`;
 }
 
 function activityTable(rows) {
   if (!rows||!rows.length) return "";
-  return `<div style="margin-top:14px;"><div class="nh-list-hdr">Room Activity</div><div style="overflow-x:auto;"><div class="nh-tbl-wrap"><table class="nh-tbl">
+  const size = 10;
+  const totalPages = Math.ceil(rows.length / size);
+  const page = Math.min(Math.max(detailPaging.activity, 1), totalPages);
+  const slice = rows.slice((page - 1) * size, page * size);
+  return `<div style="margin-top:14px;"><div class="nh-list-hdr">Room Activity <span class="nh-muted">(${rows.length})</span></div><div style="overflow-x:auto;"><div class="nh-tbl-wrap"><table class="nh-tbl">
     <thead><tr><th>Name</th><th>Mod</th><th>Score</th><th>Talk</th><th>Webcam</th><th>Msgs</th><th>React</th><th>Polls</th><th>Hands</th><th>Joined</th><th>Left</th><th>Dur</th></tr></thead>
-    <tbody>${rows.map(it => `<tr>
+    <tbody>${slice.map(it => `<tr>
       <td>${it.name||"-"}</td><td>${it.moderator?"✓":"-"}</td><td>${it.activityScore??0}</td>
       <td>${it.talkTime||"-"}</td><td>${it.webcamTime||"-"}</td>
       <td>${it.messages??0}</td><td>${it.reactions??0}</td><td>${it.pollVotes??0}</td><td>${it.raiseHands??0}</td>
@@ -984,7 +997,7 @@ function activityTable(rows) {
       <td class="nh-muted nh-mono">${fmtDTen(it.leftAt)}</td>
       <td>${it.duration||"-"}</td>
     </tr>`).join("")}</tbody>
-  </table></div></div></div>`;
+  </table></div></div>${histPgn({ page, totalPages, total: rows.length }, "act-page-btn")}</div>`;
 }
 
 // Access code state/history is fetched lazily per class (from /api/classes/:id/detail)
@@ -1114,6 +1127,7 @@ function renderClassDetail(data) {
   if (s && s.__notfound) return emptyDetail("Class not found.");
   if (!s) return emptyDetail("No class data available.");
   state.selectedClassId = s.classId;
+  if (detailPaging.forClassId !== s.classId) { detailPaging.recordings = 1; detailPaging.activity = 1; detailPaging.forClassId = s.classId; }
   return `<div class="nh-detail">
     <div class="nh-detail-hdr">
       <div><div class="nh-detail-title">${s.className||s.classId}</div></div>
@@ -1320,6 +1334,8 @@ function bindInteractions() {
   document.querySelectorAll("[data-student-id]").forEach(b=>{b.onclick=()=>{state.selectedStudentId=b.dataset.studentId;renderCurrentView();};});
   document.querySelectorAll(".teacher-page-btn").forEach(b=>{b.onclick=()=>{const p=parseInt(b.dataset.page,10);if(p>=1){teacherListState.page=p;loadTeacherList();}};});
   document.querySelectorAll(".student-page-btn").forEach(b=>{b.onclick=()=>{const p=parseInt(b.dataset.page,10);if(p>=1){studentListState.page=p;loadStudentList();}};});
+  document.querySelectorAll(".rec-page-btn").forEach(b=>{b.onclick=()=>{const p=parseInt(b.dataset.page,10);if(p>=1){detailPaging.recordings=p;renderCurrentView();}};});
+  document.querySelectorAll(".act-page-btn").forEach(b=>{b.onclick=()=>{const p=parseInt(b.dataset.page,10);if(p>=1){detailPaging.activity=p;renderCurrentView();}};});
 }
 
 // ============================================================
