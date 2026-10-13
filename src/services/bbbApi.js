@@ -7,6 +7,9 @@ const webhookStatusDb = require("../db/queries/webhookStatus");
 const liveRoomsDb = require("../db/queries/liveRooms");
 const recordingsDb = require("../db/queries/recordings");
 
+const RECORDING_SYNC_INTERVAL_MS = 5 * 60 * 1000; // throttle recording sync off the /api/stats path
+let lastRecordingSyncAt = 0;
+
 function buildChecksum(algorithm, value) {
   return crypto.createHash(algorithm).update(value).digest("hex");
 }
@@ -298,26 +301,29 @@ async function syncDashboardState() {
 
     await liveRoomsDb.syncLiveRooms(liveRooms);
 
-    // Sync recordings (best-effort — a recordings failure must not break hook/live sync)
-    try {
-      const recordingResult = await getRecordings();
-      const recordings = [];
-      for (const rec of recordingResult.recordings) {
-        if (!rec.recordId) continue;
+    // Sync recordings (best-effort; throttled so it doesn't run on every /api/stats and
+    // exhaust the pool). A recordings failure must not break hook/live sync.
+    if (Date.now() - lastRecordingSyncAt > RECORDING_SYNC_INTERVAL_MS) {
+      try {
+        const recordingResult = await getRecordings();
+        const needCtx = recordingResult.recordings
+          .filter(rec => rec.recordId && !rec.metadataClassId && rec.meetingId)
+          .map(rec => rec.meetingId);
+        const ctxMap = await liveRoomsDb.findMeetingContextsBatch(needCtx);
 
-        let classId = rec.metadataClassId;
-        if (!classId && rec.meetingId) {
-          const ctx = await liveRoomsDb.findMeetingContext(rec.meetingId);
-          classId = ctx.classId;
+        const recordings = [];
+        for (const rec of recordingResult.recordings) {
+          if (!rec.recordId) continue;
+          const ctx = rec.meetingId ? ctxMap.get(rec.meetingId) : null;
+          const classId = rec.metadataClassId || (ctx ? ctx.classId : null);
+          if (!classId) continue; // keep only attributable recordings (unchanged behavior)
+          recordings.push({ ...rec, classId });
         }
-
-        // Only keep recordings we can attribute to a known class
-        if (!classId) continue;
-        recordings.push({ ...rec, classId });
+        await recordingsDb.syncRecordings(recordings);
+        lastRecordingSyncAt = Date.now();
+      } catch (recordingError) {
+        console.error("Recording sync failed:", recordingError.message);
       }
-      await recordingsDb.syncRecordings(recordings);
-    } catch (recordingError) {
-      console.error("Recording sync failed:", recordingError.message);
     }
 
     await webhookStatusDb.updateWebhookStatus({

@@ -1,5 +1,6 @@
 const db = require("../index");
 const recordingsDb = require("./recordings");
+const { pickPrimaryTeacher } = require("../../utils/helpers");
 
 async function upsertClass(classId, className = null) {
   if (!classId || classId === "unmapped") return null;
@@ -61,16 +62,13 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
     conditions.push(`EXISTS (SELECT 1 FROM class_teachers ct WHERE ct.class_id = c.class_id AND ct.teacher_id = $${paramIndex++})`);
     params.push(teacherId);
   }
-  // Skip date filter when searching by name — user wants to find a specific class regardless of date
-  if (!search) {
-    if (from) {
-      conditions.push(`c.updated_at >= $${paramIndex++}::date`);
-      params.push(from);
-    }
-    if (to) {
-      conditions.push(`c.updated_at < ($${paramIndex++}::date + interval '1 day')`);
-      params.push(to);
-    }
+  // Filter by ACTIVITY date (had a meeting in range), not the class row's updated_at.
+  // Skip when searching by name — user wants the class regardless of date.
+  if (!search && (from || to)) {
+    const rangeConds = [];
+    if (from) { rangeConds.push(`m.started_at >= $${paramIndex++}::date`); params.push(from); }
+    if (to)   { rangeConds.push(`m.started_at < ($${paramIndex++}::date + 1)`); params.push(to); }
+    conditions.push(`EXISTS (SELECT 1 FROM meetings m WHERE m.class_id = c.class_id AND ${rangeConds.join(" AND ")})`);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -90,7 +88,9 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
        (SELECT COUNT(DISTINCT m.meeting_id) FROM meetings m WHERE m.class_id = c.class_id) as meeting_count,
        (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as join_events,
        (SELECT COALESCE(SUM(m.leave_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as leave_events,
-       (SELECT MAX(m.ended_at) FROM meetings m WHERE m.class_id = c.class_id) as last_ended_at
+       (SELECT MAX(m.ended_at) FROM meetings m WHERE m.class_id = c.class_id) as last_ended_at,
+       (SELECT json_agg(json_build_object('teacherId', t.teacher_id, 'teacherName', t.teacher_name, 'linkedAt', ct.created_at) ORDER BY ct.created_at)
+          FROM class_teachers ct JOIN teachers t ON t.teacher_id = ct.teacher_id WHERE ct.class_id = c.class_id) as teachers_json
      FROM classes c
      ${whereClause}
      ORDER BY c.updated_at DESC
@@ -109,7 +109,8 @@ async function searchClasses({ search, teacherId, from, to, page = 1, limit = 20
       leaveEvents: parseInt(row.leave_events, 10),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      lastEndedAt: row.last_ended_at
+      lastEndedAt: row.last_ended_at,
+      primaryTeacher: (() => { const p = pickPrimaryTeacher(row.class_name || row.class_id, row.teachers_json || []); return p ? p.teacherName : null; })()
     })),
     pagination: {
       page,
@@ -130,9 +131,10 @@ async function getClassDetails(classId) {
   const cls = classResult.rows[0];
 
   const teachersResult = await db.query(
-    `SELECT t.* FROM teachers t
+    `SELECT t.*, ct.created_at AS linked_at FROM teachers t
      JOIN class_teachers ct ON ct.teacher_id = t.teacher_id
-     WHERE ct.class_id = $1`,
+     WHERE ct.class_id = $1
+     ORDER BY ct.created_at ASC`,
     [classId]
   );
 
@@ -152,15 +154,23 @@ async function getClassDetails(classId) {
 
   const recordings = await recordingsDb.getRecordingsByClassId(classId);
 
+  const teachers = teachersResult.rows.map(t => ({
+    teacherId: t.teacher_id,
+    teacherName: t.teacher_name || t.teacher_id,
+    linkedAt: t.linked_at
+  }));
+  const primary = pickPrimaryTeacher(cls.class_name || cls.class_id, teachers);
+  const primaryTeacherId = primary ? primary.teacherId : null;
+  for (const t of teachers) t.isPrimary = t.teacherId === primaryTeacherId;
+
   return {
     classId: cls.class_id,
     className: cls.class_name || cls.class_id,
     createdAt: cls.created_at,
     updatedAt: cls.updated_at,
-    teachers: teachersResult.rows.map(t => ({
-      teacherId: t.teacher_id,
-      teacherName: t.teacher_name || t.teacher_id
-    })),
+    teachers,
+    primaryTeacher: primary ? primary.teacherName : null,
+    primaryTeacherId,
     students: studentsResult.rows.map(s => ({
       userId: s.user_id,
       userName: s.user_name || s.user_id,

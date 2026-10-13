@@ -1,4 +1,5 @@
 const db = require("../index");
+const { pickPrimaryTeacher } = require("../../utils/helpers");
 
 async function getStat(key) {
   const result = await db.query(
@@ -74,7 +75,9 @@ async function getTopClasses(limit = 10) {
        (SELECT COUNT(DISTINCT cs.user_id) FROM class_students cs WHERE cs.class_id = c.class_id) as students,
        (SELECT COALESCE(SUM(m.join_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as join_events,
        (SELECT COALESCE(SUM(m.leave_events), 0) FROM meetings m WHERE m.class_id = c.class_id) as leave_events,
-       (SELECT MAX(m.ended_at) FROM meetings m WHERE m.class_id = c.class_id) as last_ended_at
+       (SELECT MAX(m.ended_at) FROM meetings m WHERE m.class_id = c.class_id) as last_ended_at,
+       (SELECT json_agg(json_build_object('teacherId', t.teacher_id, 'teacherName', t.teacher_name, 'linkedAt', ct.created_at) ORDER BY ct.created_at)
+          FROM class_teachers ct JOIN teachers t ON t.teacher_id = ct.teacher_id WHERE ct.class_id = c.class_id) as teachers_json
      FROM classes c
      WHERE c.class_id != 'unmapped'
        AND (
@@ -94,7 +97,8 @@ async function getTopClasses(limit = 10) {
     joinEvents: parseInt(row.join_events, 10),
     leaveEvents: parseInt(row.leave_events, 10),
     createdAt: row.created_at,
-    lastEndedAt: row.last_ended_at
+    lastEndedAt: row.last_ended_at,
+    primaryTeacher: (() => { const p = pickPrimaryTeacher(row.class_name || row.class_id, row.teachers_json || []); return p ? p.teacherName : null; })()
   }));
 }
 

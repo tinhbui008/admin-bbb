@@ -135,9 +135,28 @@ function shouldCountAsStudent(userLike, teacherId) {
   return !isTeacherIdentity(userLike, teacherId);
 }
 
+// Primary teacher of a class: the linked teacher whose name appears in the room/class
+// name (rooms are named like "T036 - Tra My NGUYEN"), else the earliest-linked one.
+// `teachers` items carry { teacherId, teacherName, linkedAt }.
+function pickPrimaryTeacher(className, teachers) {
+  if (!Array.isArray(teachers) || teachers.length === 0) return null;
+  const haystack = String(className || "").toLowerCase();
+  const byName = teachers.find(t => {
+    const name = String(t.teacherName || t.teacherId || "").trim().toLowerCase();
+    return name && haystack.includes(name);
+  });
+  if (byName) return byName;
+  return [...teachers].sort((a, b) => {
+    const la = a.linkedAt ? new Date(a.linkedAt).getTime() : Infinity;
+    const lb = b.linkedAt ? new Date(b.linkedAt).getTime() : Infinity;
+    return la - lb;
+  })[0];
+}
+
 module.exports = {
   tryParseJson,
   pickFirstValue,
+  pickPrimaryTeacher,
   toTimestampMs,
   formatDurationMs,
   isJoinEvent,

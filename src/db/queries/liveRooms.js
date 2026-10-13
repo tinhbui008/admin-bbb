@@ -75,8 +75,38 @@ async function findMeetingContext(meetingId) {
   return { classId: null, teacherId: null };
 }
 
+async function findMeetingContextsBatch(meetingIds) {
+  const map = new Map();
+  const ids = [...new Set((meetingIds || []).filter(Boolean))];
+  if (ids.length === 0) return map;
+
+  const mRes = await db.query(
+    `SELECT meeting_id, class_id, teacher_id FROM meetings
+     WHERE meeting_id = ANY($1) AND class_id IS NOT NULL`,
+    [ids]
+  );
+  for (const row of mRes.rows) {
+    map.set(row.meeting_id, { classId: row.class_id, teacherId: row.teacher_id });
+  }
+
+  const missing = ids.filter(id => !map.has(id));
+  if (missing.length > 0) {
+    const eRes = await db.query(
+      `SELECT DISTINCT ON (meeting_id) meeting_id, class_id, teacher_id FROM events
+       WHERE meeting_id = ANY($1) AND class_id IS NOT NULL
+       ORDER BY meeting_id, created_at DESC`,
+      [missing]
+    );
+    for (const row of eRes.rows) {
+      if (!map.has(row.meeting_id)) map.set(row.meeting_id, { classId: row.class_id, teacherId: row.teacher_id });
+    }
+  }
+  return map;
+}
+
 module.exports = {
   getLiveRooms,
   syncLiveRooms,
-  findMeetingContext
+  findMeetingContext,
+  findMeetingContextsBatch
 };
